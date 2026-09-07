@@ -1,0 +1,1 @@
+{"name":"@cavity-rush/worker","private":true,"type":"module","scripts":{"dev":"wrangler dev --port 8787","check":"tsc --noEmit -p tsconfig.json"},"dependencies":{"@cavity-rush/shared":"*","@cloudflare/workers-types":"^4.20250705.0"},"devDependencies":{"typescript":"^7.0.2"}}
