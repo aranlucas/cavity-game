@@ -1,0 +1,12 @@
+node_modules
+client/dist
+.wrangler
+*.log
+.DS_Store
+.playwright-cli/
+output/
+*.tsbuildinfo
+*.blend1
+.env
+.env.*
+!.env.example

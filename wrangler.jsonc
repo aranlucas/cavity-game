@@ -1,0 +1,11 @@
+{
+  "$schema":"./node_modules/wrangler/config-schema.json",
+  "name":"cavity-rush",
+  "main":"worker/src/index.ts",
+  "compatibility_date":"2026-07-09",
+  "compatibility_flags":["nodejs_compat"],
+  "assets":{"directory":"./client/dist","binding":"ASSETS","not_found_handling":"single-page-application","run_worker_first":["/ws/*"]},
+  "durable_objects":{"bindings":[{"name":"GAME_ROOMS","class_name":"GameRoom"}]},
+  "migrations":[{"tag":"v1","new_sqlite_classes":["GameRoom"]}],
+  "observability":{"enabled":true,"head_sampling_rate":1}
+}
