@@ -1,6 +1,6 @@
 {
   "patient": {
-    "bytes": 205144,
+    "bytes": 258512,
     "errors": 0,
     "warnings": 0,
     "info": 2,
@@ -20,7 +20,7 @@
     ]
   },
   "treatment-mouth": {
-    "bytes": 97020,
+    "bytes": 149184,
     "errors": 0,
     "warnings": 0,
     "info": 2,

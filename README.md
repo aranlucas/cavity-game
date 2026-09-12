@@ -34,7 +34,7 @@ Editable Blender files and export scripts are included:
 | Dental delivery equipment | `assets/clinic-equipment.blend` | `scripts/build-equipment.py` |
 | Teaching cast, five instruments, and chair | `assets/dental-studio.blend` | `scripts/process-scan.py`, `scripts/build-instruments.py`, `scripts/build-chair.py` |
 
-The shipped patient, mouth, and equipment GLBs total about **494 KB** (205,144 + 97,020 + 192,116 bytes). They use Meshopt compression with the loader's bundled decoder. The separate teaching cast is 555,668 bytes, reduced from its 34 MB source scan.
+The shipped patient, mouth, and equipment GLBs total about **600 KB**. They use Meshopt compression with the loader's bundled decoder. Current byte counts and validation results are recorded in `assets/asset-validation.json`. The separate teaching cast is 555,668 bytes, reduced from its 34 MB source scan.
 
 To rebuild the patient, mouth, and equipment on macOS with Blender installed:
 

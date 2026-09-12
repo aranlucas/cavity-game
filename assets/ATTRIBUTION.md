@@ -21,10 +21,10 @@ The mirror, polisher, bur, composite applicator, and curing light were authored 
 
 ## Original patient and treatment mouth
 
-The reclining patient and treatment mouth were authored for this project in Blender with `scripts/build-patient.py`, run through Blender's background Python interface. The native editable source is `assets/patient-studio.blend`; the source also includes preview scenes. `assets/patient-preview.png` and `assets/treatment-mouth-preview.png` show the authored models.
+The reclining patient and treatment mouth were authored for this project in Blender with `scripts/build-patient.py`, run through Blender's background Python interface. The native editable source is `assets/patient-studio.blend`; the source also includes preview scenes. `assets/patient-preview.png`, `assets/treatment-mouth-preview.png`, and `assets/treatment-face-preview.png` show the authored models and their fit in the face.
 
-- `client/public/models/patient.glb` (205,144 bytes) contains the patient mesh and named skin, shirt, and hair materials used for the three fictional patient appearances.
-- `client/public/models/treatment-mouth.glb` (97,020 bytes) contains the stylized oral anatomy, four tooth treatment sites, modeled recesses, and separate named plaque, decay, and filling inserts.
+- `client/public/models/patient.glb` contains a continuous face and jaw sculpt, fitted upper and lower lips, and named skin, shirt, and hair materials used for the three fictional patient appearances.
+- `client/public/models/treatment-mouth.glb` contains distinct incisor, canine, and molar crowns, inward-angled anterior teeth, recessed tongue geometry, four tooth treatment sites, modeled recesses, and separate named plaque, decay, and filling inserts.
 
 These are original meshes, not third-party character assets or patient scans. Tooth treatment animates the authored inserts: plaque and decay shrink away, then composite fills the recesses and is cured. It does not perform freeform volumetric destruction. The anatomy and treatment sequence are fictional and simplified, and the game is not clinical training.
 
@@ -38,4 +38,4 @@ The clinic shell, cabinetry, plants, and wall art are original procedural geomet
 
 ## Web export
 
-`scripts/optimize-models.sh` applies Meshopt compression to the patient, treatment mouth, and equipment exports while preserving node names, material names, and repair-insert pivots required by gameplay. All three GLBs package their geometry and materials locally and total 494,280 bytes. `tests/assets.test.mjs` checks the shipped GLBs, required treatment inserts, and patient material names.
+`scripts/optimize-models.sh` applies Meshopt compression to the patient, treatment mouth, and equipment exports while preserving node names, material names, and repair-insert pivots required by gameplay. All three GLBs package their geometry and materials locally. `assets/asset-validation.json` records current sizes and glTF validation results; `tests/assets.test.mjs` checks the shipped GLBs, required treatment inserts, and patient material names.

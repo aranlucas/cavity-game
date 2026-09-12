@@ -43,13 +43,13 @@ white = material('Warm ivory', (.91, .92, .82), .58)
 teal = material('Safety goggles frame', (.09, .34, .29), .33)
 lens = material('Safety goggles lenses', (.105, .52, .49), .17, .28)
 dark = material('Oral interior', (.09, .014, .025), .72)
-lips = material('Patient lips', (.53, .145, .125), .54)
+lips = material('Patient lips', (.46, .16, .145), .48)
 bib = material('Woven dental bib', (.47, .71, .73), .88)
 steel = material('Bib clips', (.52, .62, .64), .24, .75)
-gum = material('Healthy gingiva', (.64, .205, .245), .44)
-palate = material('Tongue and palate', (.60, .135, .215), .46)
-enamel = material('Tooth enamel', (.91, .87, .69), .26)
-rootmat = material('Tooth neck', (.77, .68, .48), .40)
+gum = material('Healthy gingiva', (.49, .165, .185), .48)
+palate = material('Tongue and palate', (.49, .135, .17), .5)
+enamel = material('Tooth enamel', (.85, .82, .71), .29)
+rootmat = material('Tooth neck', (.72, .65, .49), .36)
 dentin = material('Prepared dentin', (.40, .25, .12), .67)
 decay = material('Active decay', (.045, .018, .009), .83)
 plaque = material('Plaque deposits', (.52, .34, .07), .71)
@@ -111,6 +111,12 @@ def ellipse_tube(name, center, radii, radius, mat, count=40):
     cx,cy,cz=center
     pts=[(cx+radii[0]*math.cos(i*math.tau/count),cy,cz+radii[1]*math.sin(i*math.tau/count)) for i in range(count+1)]
     return tube(name,pts,radius,mat)
+
+def lip_outline(t):
+    s=abs(math.sin(t));x=2.13*math.cos(t);upper=math.sin(t)>=0
+    z=(-1.43 if upper else 1.57)*s**.83
+    if upper:z+=.11*math.exp(-(x/.34)**2)*s
+    return x,z
 
 def export(scene, filename, preserve_prefixes=()):
     """Join export copies by material, retaining named editable source anatomy."""
@@ -180,25 +186,53 @@ for side in [-1,1]:
         rod('Sneaker lace',(x*.16-.052,.505,z),(x*.16+.052,.505,z+.008),.006,white,verts=10)
     rod('Trouser side stitch',(x*.23,.92,.06),(x*.25,.77,.43),.003,white,verts=8)
 
-# Main head and lower face get genuine cut-away mouth opening.
-head=sphere('Head sculpt',(0,1.57,-1.34),(.178,.224,.250),skin,40,24)
-jaw=sphere('Lower face sculpt',(0,1.64,-1.17),(.133,.153,.132),skin,32,20)
-sphere('Chin',(0,1.668,-1.07),(.099,.086,.059),skin)
-for part in [head,jaw]:
-    cutter=sphere('Temporary oral cavity cutter',(0,1.79,-1.155),(.105,.136,.088),None,32,20)
-    bpy.context.view_layer.objects.active=part
-    mod=part.modifiers.new('True open oral cavity','BOOLEAN');mod.operation='DIFFERENCE';mod.object=cutter
-    bpy.ops.object.modifier_apply(modifier=mod.name)
-    bpy.data.objects.remove(cutter,do_unlink=True)
+# One continuous loft forms the forehead, cheekbones, tapered jaw and chin.
+# A broad facial plane keeps the lips seated in skin; no intersecting cheek
+# or chin spheres remain visible under close treatment lighting.
+profile=[(-1.59,.012,1.55,.025),(-1.565,.085,1.55,.14),
+         (-1.52,.15,1.565,.22),(-1.43,.177,1.575,.225),
+         (-1.34,.179,1.579,.223),(-1.255,.167,1.583,.221),
+         (-1.18,.149,1.589,.21),(-1.11,.132,1.596,.199),
+         (-1.065,.108,1.604,.188),(-1.035,.069,1.61,.148),
+         (-1.016,.032,1.613,.08),(-1.006,.004,1.613,.009)]
+v=[];f=[];segments=64
+for z,rx,cy,ry in profile:
+    for j in range(segments):
+        t=math.tau*j/segments;s=math.sin(t)
+        y=cy+ry*math.copysign(abs(s)**(.63 if s>0 else 1),s)
+        v.append((rx*math.cos(t),y,z))
+for i in range(len(profile)-1):
+    for j in range(segments):
+        a=i*segments+j;b=i*segments+(j+1)%segments
+        f.append((a,b,b+segments,a+segments))
+f.extend([tuple(reversed(range(segments))),tuple((len(profile)-1)*segments+j for j in range(segments))])
+head=mesh('Continuous face and jaw',v,f,skin)
+bpy.context.view_layer.objects.active=head
+smooth=head.modifiers.new('Sculpted facial contours','SUBSURF');smooth.levels=2
+bpy.ops.object.modifier_apply(modifier=smooth.name)
+# Cut the exact inner lip contour rather than an unrelated ellipse. This
+# avoids exposed boolean edges between the vermilion and the facial skin.
+cv=[];cf=[];count=128
+for y in [1.62,1.92]:
+    for j in range(count):
+        x,z=lip_outline(math.tau*j/count)
+        cv.append((x*.045,y,MOUTH_ANCHOR[2]+z*.045))
+for j in range(count):cf.append((j,(j+1)%count,(j+1)%count+count,j+count))
+cf.extend([tuple(reversed(range(count))),tuple(count+j for j in range(count))])
+cutter=mesh('Temporary oral cavity cutter',cv,cf,None)
+bpy.context.view_layer.objects.active=head
+mod=head.modifiers.new('True open oral cavity','BOOLEAN');mod.operation='DIFFERENCE';mod.object=cutter
+bpy.ops.object.modifier_apply(modifier=mod.name)
+bpy.data.objects.remove(cutter,do_unlink=True)
+finish(head,'Continuous face and jaw',None)
 # Cheek shapes, ears, nose bridge and nostrils provide a human facial silhouette.
 for side in [-1,1]:
     sphere('Ear',(side*.180,1.576,-1.344),(.034,.062,.039),skin)
     sphere('Ear concha',(side*.198,1.594,-1.339),(.014,.034,.020),blush)
-    sphere('Cheek',(side*.114,1.721,-1.224),(.051,.036,.055),blush,20,12)
-    sphere('Nose wing',(side*.027,1.791,-1.346),(.024,.026,.026),skin)
-    sphere('Nostril',(side*.025,1.800,-1.323),(.011,.006,.008),dark,16,8)
-sphere('Nose bridge',(0,1.786,-1.389),(.029,.035,.061),skin)
-sphere('Nose tip',(0,1.817,-1.349),(.034,.027,.030),skin)
+    sphere('Nose wing',(side*.024,1.800,-1.301),(.021,.023,.025),skin)
+    sphere('Nostril',(side*.022,1.810,-1.278),(.009,.005,.007),dark,20,12)
+sphere('Nose bridge',(0,1.794,-1.365),(.025,.033,.079),skin)
+sphere('Nose tip',(0,1.824,-1.304),(.029,.025,.028),skin)
 # Sculpted hair cap with gently overlapping locks around the forehead.
 sphere('Hair back cap',(0,1.544,-1.457),(.184,.211,.164),hair,28,18)
 for side in [-1,1]:
@@ -214,9 +248,32 @@ for side in [-1,1]:
     sphere('Tinted safety lens',(c[0],c[1]-.002,c[2]),(.060,.012,.039),lens,24,12)
     rod('Goggle arm',(side*.145,1.769,-1.435),(side*.177,1.614,-1.371),.009,teal)
 rod('Goggle nose bridge',(-.018,1.784,-1.435),(.018,1.784,-1.435),.009,teal)
-# Outer vermilion lip and inset dark oral well; mouth model supplies anatomy.
-ellipse_tube('Open lips',MOUTH_ANCHOR,(.100,.085),.012,lips,48)
-sphere('Oral darkness',(0,1.715,-1.155),(.098,.054,.083),dark,24,14)
+# Sculpt upper and lower lips as tapered ribbons, with a cupid's bow and
+# a fuller lower lip. The outer edge sinks into the continuous facial skin.
+for upper in [True,False]:
+    v=[];f=[];segments=64;cross=8
+    for i in range(segments+1):
+        t=math.pi*i/segments;s=math.sin(t);x=2.13*math.cos(t)
+        sign=-1 if upper else 1
+        _,z=lip_outline(t if upper else math.tau-t)
+        thickness=(.20 if upper else .25)*s**.65
+        for j in range(cross+1):
+            u=j/cross
+            # Follow the skin's curvature and feather the outer border into
+            # it. A small raised middle gives volume without a tube profile.
+            xx=x*.045;zz=MOUTH_ANCHOR[2]+(z+sign*thickness*u)*.045
+            a,b=next((a,b) for a,b in zip(profile,profile[1:]) if a[0]<=zz<=b[0])
+            mix=(zz-a[0])/(b[0]-a[0]);rx,cy,ry=[a[k]+(b[k]-a[k])*mix for k in range(1,4)]
+            skin_y=cy+ry*max(0,1-(xx/rx)**2)**.315
+            y=skin_y+.0008+.0045*math.sin(math.pi*u)*s**.6
+            v.append((xx,y,zz))
+    for i in range(segments):
+        for j in range(cross):
+            a=i*(cross+1)+j
+            face=(a,a+1,a+cross+2,a+cross+1)
+            f.append(tuple(reversed(face)) if upper else face)
+    mesh(('Upper' if upper else 'Lower')+' sculpted lip',v,f,lips)
+sphere('Oral darkness',(0,1.715,-1.155),(.098,.054,.073),dark,32,18)
 # Protective bib follows the body slope; embossed fold and two metal clips.
 bib_mesh=mesh('Textured patient bib',[(-.153,1.420,-1.10),(.153,1.420,-1.10),(.213,1.275,-.60),(-.213,1.275,-.60)],[(3,2,1,0)],bib)
 solid=bib_mesh.modifiers.new('Cloth thickness','SOLIDIFY');solid.thickness=.007
@@ -230,53 +287,67 @@ export(patient_scene,'patient.glb')
 
 mouth_scene=bpy.data.scenes.new('Treatment mouth - editable anatomy')
 bpy.context.window.scene=mouth_scene
-# Recessed oral basin; its up-facing bowl surrounds a sculpted tongue.
+# Recessed oral cavity. The opening is wider than it is tall, and its
+# rear wall stays behind the teeth instead of making a flat burgundy disc.
 basin_vertices=[];basin_faces=[]
-for radius,y in [(.01,-.54),(.30,-.48),(.65,-.32),(.85,-.055),(1.0,.08)]:
-    for j in range(48):
-        t=j*math.tau/48
-        basin_vertices.append((2.05*radius*math.cos(t),y,1.87*radius*math.sin(t)))
-for ri in range(4):
-    for j in range(48):
-        basin_faces.append((ri*48+j,(ri+1)*48+j,(ri+1)*48+(j+1)%48,ri*48+(j+1)%48))
+for radius,y in [(.01,-.70),(.30,-.66),(.58,-.50),(.78,-.30),(.94,-.12),(1.0,-.09)]:
+    for j in range(64):
+        t=j*math.tau/64
+        # The cheeks curve away from the camera at the mouth corners.
+        # Recess the vestibule there so it cannot cover the tapered lips.
+        depth=y-.70*radius**3*abs(math.cos(t))**3
+        basin_vertices.append((2.10*radius*math.cos(t),depth,1.55*radius*math.sin(t)))
+for ri in range(5):
+    for j in range(64):
+        basin_faces.append((ri*64+j,(ri+1)*64+j,(ri+1)*64+(j+1)%64,ri*64+(j+1)%64))
 mesh('Concave oral vestibule',basin_vertices,basin_faces,dark)
-sphere('Tongue body',(0,.11,.34),(.83,.21,1.01),palate,28,18)
-tube('Median tongue groove',[(0,.312,.95),(0,.325,.65),(0,.324,.32),(0,.309,.04)],.018,gum)
-for j in range(4):
-    z=-.78+j*.16
-    tube('Palatal ruga',[(-.52,.13,z),(0,.17,z-.065),(.52,.13,z)],.030,palate)
-# Complete upper and lower gum arches use a broad swept horseshoe, not blocks.
+tongue=sphere('Sculpted recessed tongue',(0,-.13,.12),(.78,.245,.90),palate,64,40)
+for vertex in tongue.data.vertices:
+    # Local Blender Z points out of the mouth. Depress the upper surface
+    # into a shallow median groove; no raised line or floating palate rods.
+    x,z,y=vertex.co.x,-vertex.co.y,vertex.co.z
+    front=(z+.9)/1.8
+    vertex.co.x*=1-.18*front
+    if y>0:
+        vertex.co.z-=.028*math.exp(-(x/.075)**2)*math.sin(math.pi*front)**2*(y/.245)
+# Slimmer alveolar ridges follow the necks, leaving individual gum margins.
 for upper in [True,False]:
     sign=-1 if upper else 1
     points=[]
     for j in range(41):
         t=math.pi*j/40
-        points.append((1.48*math.cos(t),.015,sign*(.28+1.15*math.sin(t))))
-    tube(('Upper' if upper else 'Lower')+' alveolar ridge',points,.325,gum,14)
-# Crown rings use rounded square contours with sculpted occlusal cusps.
-def crown(name,cx,cz,sx,sz,kind,rotation=0,target=None):
-    n=32;v=[];f=[]
-    # y, planar scale. Inner rings create a real cavity for treatment teeth.
-    rings=[(-.08,.73),(.12,.84),(.38,1.0),(.57,.93),(.61,.65),(.54,.32)]
-    if kind=='incisor':rings=[(-.08,.64),(.10,.85),(.43,1),(.67,.91),(.68,.5),(.68,.05)]
-    elif kind=='canine':rings=[(-.08,.71),(.10,.92),(.44,1),(.67,.60),(.79,.15),(.79,.02)]
-    elif target is not None:rings=[(-.08,.73),(.12,.84),(.38,1),(.57,.94),(.63,.68),(.56,.39),(.38,.29)]
-    for ri,(y,r) in enumerate(rings):
+        points.append((1.48*math.cos(t),-.14,sign*(.31+1.13*math.sin(t))))
+    tube(('Upper' if upper else 'Lower')+' alveolar ridge',points,.205,gum,18)
+# Each crown has a cervical contour, rounded body and its own cutting or
+# chewing surface. Anterior crowns lean inward to expose their broad face.
+def crown(name,cx,cz,sx,sz,kind,rotation=0,target=None,lean=0,base_y=0,height=1):
+    n=48;v=[];f=[]
+    # Height, width, depth. Incisors finish with a thin blade, not a square top.
+    rings=[(-.08,.73,.73),(.06,.83,.83),(.25,.98,.98),(.43,1,1),(.55,.96,.96),(.60,.78,.78),(.57,.49,.49),(.53,.12,.12)]
+    if kind=='incisor':rings=[(-.08,.65,.7),(.03,.77,.88),(.20,.93,1),(.43,1,.78),(.62,1,.37),(.69,.97,.19),(.71,.93,.07)]
+    elif kind=='canine':rings=[(-.08,.67,.73),(.07,.84,.95),(.30,1,1),(.49,.90,.81),(.66,.56,.46),(.76,.18,.17),(.78,.035,.035)]
+    elif target is not None:rings=[(-.08,.73,.73),(.06,.83,.83),(.25,.98,.98),(.43,1,1),(.55,.96,.96),(.61,.75,.75),(.58,.46,.46),(.39,.29,.29)]
+    for ri,(y,rx,rz) in enumerate(rings):
+        y*=height
         for j in range(n):
             t=j*math.tau/n
             # Superellipse instead of spheres gives incisors and molars real crown silhouettes.
-            xx=math.copysign(abs(math.cos(t))**.56,math.cos(t))*sx*r
-            zz=math.copysign(abs(math.sin(t))**.56,math.sin(t))*sz*r
+            xx=math.copysign(abs(math.cos(t))**.62,math.cos(t))*sx*rx
+            zz=math.copysign(abs(math.sin(t))**.62,math.sin(t))*sz*rz
             cusp=0
-            if kind in ('molar','premolar') and ri in [3,4]:cusp=.062*(1-math.cos(4*t))
+            if kind in ('molar','premolar'):
+                cusp=.025*(1-math.cos(4*t))*math.exp(-((ri-4.8)/1.35)**2)
             x=xx*math.cos(rotation)-zz*math.sin(rotation)
             z=xx*math.sin(rotation)+zz*math.cos(rotation)
-            v.append((cx+x,y+cusp,cz+z))
+            v.append((cx+x,base_y+(y+cusp)*math.cos(lean)-z*math.sin(lean),cz+(y+cusp)*math.sin(lean)+z*math.cos(lean)))
     for ri in range(len(rings)-1):
         for j in range(n):f.append((ri*n+j,ri*n+(j+1)%n,(ri+1)*n+(j+1)%n,(ri+1)*n+j))
     f.append(tuple(reversed(range(n))))
     f.append(tuple((len(rings)-1)*n+j for j in range(n)))
     ob=mesh(name,v,[tuple(reversed(face)) for face in f],enamel)
+    ob.data.materials.append(rootmat)
+    for polygon in ob.data.polygons:
+        if polygon.index<n:polygon.material_index=1
     if target is not None:
         # A recessed warm floor remains visible after excavation, below restoration.
         sphere('Prepared dentin liner',(cx,.405,cz),(.135,.018,.135),dentin,20,10)
@@ -292,12 +363,12 @@ for upper in [True,False]:
     for side in [-1,1]:
         target=(0 if side<0 else 1)+(0 if upper else 2)
         crown(prefix+' first molar',side*1.46,sign*.43,.365,.345,'molar',target=target)
-        crown(prefix+' premolar',side*1.37,sign*.94,.268,.261,'premolar',rotation=side*sign*.36)
-        crown(prefix+' canine',side*1.01,sign*1.275,.224,.222,'canine',rotation=side*sign*.63)
-        crown(prefix+' lateral incisor',side*.614,sign*1.447,.188,.165,'incisor',rotation=side*sign*.26)
-        crown(prefix+' central incisor',side*.209,sign*1.498,.192,.171,'incisor',rotation=side*sign*.08)
+        crown(prefix+' premolar',side*1.37,sign*.94,.268,.25,'premolar',rotation=side*sign*.32,lean=-sign*.18,base_y=-.08)
+        crown(prefix+' canine',side*1.04,sign*1.29,.223,.19,'canine',rotation=side*sign*.38,lean=-sign*(.85 if upper else .62),base_y=-.03,height=1 if upper else .85)
+        crown(prefix+' lateral incisor',side*.658,sign*1.435,.186,.16,'incisor',rotation=side*sign*.17,lean=-sign*(1.40 if upper else 1.12),base_y=.04 if upper else -.06,height=1 if upper else .78)
+        crown(prefix+' central incisor',side*.242,sign*1.47,.225 if upper else .207,.16,'incisor',rotation=side*sign*.04,lean=-sign*(1.50 if upper else 1.12),base_y=.04 if upper else -.06,height=1 if upper else .78)
         # Warm neck contour makes the gum/individual tooth boundary readable.
-        sphere(prefix+' gingival papilla',(side*1.43,.25,sign*.71),(.115,.13,.08),gum,16,10)
+        sphere(prefix+' gingival papilla',(side*1.43,.12,sign*.71),(.085,.11,.073),gum,20,12)
 export(mouth_scene,'treatment-mouth.glb',('decay_','plaque_','filling_'))
 
 # Inspection scene uses linked original meshes, with anatomy placed in the patient.
@@ -331,6 +402,11 @@ preview.render.resolution_x=1000;preview.render.resolution_y=1000;preview.render
 preview.view_settings.view_transform='AgX'
 preview.render.image_settings.file_format='PNG';preview.render.filepath=str(ROOT/'assets/patient-preview.png')
 bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/'assets/patient-studio.blend'))
+if not args.skip_preview:bpy.ops.render.render(write_still=True)
+# A face close-up catches lip seams and crown proportions in the game angle.
+cam.location=pos((MOUTH_ANCHOR[0],MOUTH_ANCHOR[1]+.32,MOUTH_ANCHOR[2]+.18))
+cam.data.ortho_scale=.40;aim(cam,(MOUTH_ANCHOR[0],MOUTH_ANCHOR[1]+.015,MOUTH_ANCHOR[2]))
+preview.render.filepath=str(ROOT/'assets/treatment-face-preview.png')
 if not args.skip_preview:bpy.ops.render.render(write_still=True)
 # Separate anatomy close-up at 1:1 modelling scale.
 bpy.context.window.scene=mouth_scene
