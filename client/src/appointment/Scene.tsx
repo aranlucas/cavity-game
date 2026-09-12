@@ -1,5 +1,5 @@
 import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
-import { ContactShadows, Environment, Html, OrbitControls, useGLTF } from "@react-three/drei";
+import { Environment, Html, OrbitControls, useGLTF } from "@react-three/drei";
 import {
   Component,
   Suspense,
@@ -10,32 +10,81 @@ import {
   type MutableRefObject,
 } from "react";
 import * as THREE from "three";
-import { patients, type Appointment, type Tool } from "./rules";
+import { patients, steps, type Appointment, type Tool } from "./rules";
+import { ClinicCamera, ClinicRoom, STATION, type ViewMode } from "./Clinic";
+import { surfaceState } from "./surface";
+
+const MOUTH_SCALE = 0.045;
 const locations: [number, number, number][] = [
-  [-1.7, 1.455, -0.7],
-  [-1.8, 1.53, 0],
-  [-1.65, 1.34, 0.7],
-  [1.6, 1.06, 0.6],
+  [-1.46, 0.59, -0.43],
+  [1.46, 0.59, -0.43],
+  [-1.46, 0.59, 0.43],
+  [1.46, 0.59, 0.43],
 ];
-function Asset({ url, onLoaded }: { url: string; onLoaded?: () => void }) {
+function Asset({ url }: { url: string }) {
   const { scene } = useGLTF(url);
-  useEffect(() => {
-    onLoaded?.();
-  }, [scene, onLoaded]);
   const copy = useMemo(() => {
     const c = scene.clone(true);
     c.traverse((o) => {
       if (o instanceof THREE.Mesh) {
         o.castShadow = true;
         o.receiveShadow = true;
-        const mats = Array.isArray(o.material) ? o.material : [o.material];
-        mats.forEach((m) => {
-          if (m instanceof THREE.MeshStandardMaterial) m.envMapIntensity = 0.3;
-        });
       }
     });
     return c;
   }, [scene]);
+  return <primitive object={copy} />;
+}
+function Mouth({ state, onLoaded }: { state: Appointment; onLoaded: () => void }) {
+  const { scene } = useGLTF("/models/treatment-mouth.glb");
+  const copy = useMemo(() => {
+    const c = scene.clone(true);
+    c.traverse((o) => {
+      if (o instanceof THREE.Mesh && o.name.startsWith("filling_")) {
+        o.material = Array.isArray(o.material)
+          ? o.material.map((m) => m.clone())
+          : o.material.clone();
+      }
+    });
+    return c;
+  }, [scene]);
+  useEffect(
+    () => () =>
+      copy.traverse((o) => {
+        if (o instanceof THREE.Mesh && o.name.startsWith("filling_")) {
+          (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => m.dispose());
+        }
+      }),
+    [copy],
+  );
+  useEffect(() => {
+    onLoaded();
+  }, [copy, onLoaded]);
+  useEffect(() => {
+    copy.traverse((o) => {
+      if (!(o instanceof THREE.Mesh)) return;
+      o.receiveShadow = true;
+      const match = /^(plaque|decay|filling)_(\d)/.exec(o.name);
+      if (!match) return;
+      const spot = Number(match[2]);
+      const index = patients[state.patient]!.spots.indexOf(spot);
+      const visual = surfaceState(state.step, state.progress[index] ?? 0, index >= 0);
+      const amount = visual[match[1] as "plaque" | "decay" | "filling"];
+      o.visible = amount > 0.001;
+      if (!o.userData.originalScale) o.userData.originalScale = o.scale.clone();
+      o.scale.copy(o.userData.originalScale as THREE.Vector3);
+      // The authoring origins are the centers of each local repair insert.
+      if (match[1] === "filling") {
+        o.scale.multiplyScalar(0.65 + 0.35 * amount);
+        (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => {
+          if (m instanceof THREE.MeshStandardMaterial) {
+            m.color.set(visual.cured ? "#f2ebd3" : "#d8d6bc");
+            m.roughness = visual.cured ? 0.22 : 0.6;
+          }
+        });
+      } else o.scale.multiplyScalar(Math.max(0.001, Math.sqrt(amount)));
+    });
+  }, [copy, state.step, state.progress, state.patient]);
   return <primitive object={copy} />;
 }
 function Instrument({
@@ -48,14 +97,58 @@ function Instrument({
   working: boolean;
 }) {
   const group = useRef<THREE.Group>(null);
-  useFrame((_, dt) => {
-    if (group.current) group.current.position.lerp(position.current, 1 - Math.exp(-dt * 18));
+  useFrame(({ clock }, dt) => {
+    if (!group.current) return;
+    group.current.position.lerp(position.current, 1 - Math.exp(-dt * 22));
+    group.current.rotation.z =
+      -0.65 + (working && tool !== "curing" ? Math.sin(clock.elapsedTime * 60) * 0.018 : 0);
   });
   return (
-    <group ref={group} rotation={[0.3, 0, -0.55]} scale={0.8}>
-      <Asset url={`/models/${tool}.glb`} />
-      {working && tool === "curing" && <pointLight color="#509dff" intensity={3} distance={2} />}
+    <group ref={group} position={[3, 3, 1]} rotation={[0.3, 0, -0.65]}>
+      <group position={[-0.18, 0.14, 0]}>
+        <Asset url={`/models/${tool}.glb`} />
+      </group>
+      {working && tool === "curing" && (
+        <pointLight color="#328fff" intensity={0.025} distance={6} decay={2} />
+      )}
     </group>
+  );
+}
+function TreatmentParticles({
+  active,
+  working,
+  tool,
+}: {
+  active: number | null;
+  working: boolean;
+  tool: Tool;
+}) {
+  const ref = useRef<THREE.InstancedMesh>(null);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+  useFrame(({ clock }) => {
+    if (!ref.current) return;
+    ref.current.visible =
+      working && active !== null && (tool === "polisher" || tool === "excavator");
+    if (!ref.current.visible) return;
+    for (let i = 0; i < 16; i++) {
+      const life = (clock.elapsedTime * 1.8 + i / 16) % 1;
+      const angle = i * 2.399;
+      dummy.position.set(
+        Math.sin(angle) * life * 0.48,
+        life * 0.8 - life * life * 0.3,
+        Math.cos(angle) * life * 0.35,
+      );
+      dummy.scale.setScalar((1 - life) * 0.025);
+      dummy.updateMatrix();
+      ref.current.setMatrixAt(i, dummy.matrix);
+    }
+    ref.current.instanceMatrix.needsUpdate = true;
+  });
+  return (
+    <instancedMesh ref={ref} args={[undefined, undefined, 16]} frustumCulled={false}>
+      <sphereGeometry args={[1, 5, 4]} />
+      <meshBasicMaterial color={tool === "polisher" ? "#e9f6ef" : "#cdb38b"} />
+    </instancedMesh>
   );
 }
 class AssetBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
@@ -73,17 +166,18 @@ class AssetBoundary extends Component<{ children: ReactNode }, { failed: boolean
     );
   }
 }
-function CameraReset({ resetKey }: { resetKey: number }) {
+function CameraReset({ resetKey, mode }: { resetKey: number; mode: ViewMode }) {
   const { camera, controls, size } = useThree();
   useEffect(() => {
-    const fit = Math.max(1, 1.05 / (size.width / size.height));
-    camera.position.set(0, 0.65 + 6.35 * fit, 5.7 * fit);
-    camera.lookAt(0, 0.65, 0);
+    if (mode !== "treatment") return;
+    const fit = Math.max(1, 0.95 / (size.width / size.height));
+    camera.position.set(STATION.x, STATION.y + 0.32 * fit, STATION.z + 0.18 * fit);
+    camera.lookAt(STATION.x, STATION.y + 0.015, STATION.z);
     if (controls && "target" in controls) {
-      (controls.target as THREE.Vector3).set(0, 0.65, 0);
+      (controls.target as THREE.Vector3).set(STATION.x, STATION.y + 0.015, STATION.z);
       if ("update" in controls && typeof controls.update === "function") controls.update();
     }
-  }, [resetKey, camera, controls, size.width, size.height]);
+  }, [resetKey, mode, camera, controls, size.width, size.height]);
   return null;
 }
 export function TreatmentScene({
@@ -95,6 +189,9 @@ export function TreatmentScene({
   onHold,
   onReady,
   resetKey,
+  mode,
+  onNear,
+  onEnter,
 }: {
   state: Appointment;
   tool: Tool;
@@ -104,39 +201,75 @@ export function TreatmentScene({
   onHold: (value: boolean) => void;
   onReady: () => void;
   resetKey: number;
+  mode: ViewMode;
+  onNear: (v: boolean) => void;
+  onEnter: () => void;
 }) {
-  const cursor = useRef(new THREE.Vector3(2.5, 2.7, 1));
+  const cursor = useRef(new THREE.Vector3(3, 3, 1));
   const patient = patients[state.patient]!;
-  const operating = state.started && !state.paused && state.step < 5;
+  const operating = mode === "treatment" && state.started && !state.paused && state.step < 5;
+  const effective =
+    operating &&
+    working &&
+    active !== null &&
+    tool === steps[state.step]?.tool &&
+    !state.cooldown &&
+    !state.recovering &&
+    state.comfort > 15;
   function aim(e: ThreeEvent<PointerEvent>) {
-    cursor.current.copy(e.point).add(new THREE.Vector3(-0.12, 0.2, 0));
+    // A ray can cross enamel, cavity inserts and tongue. Only the nearest surface owns this gesture.
+    e.stopPropagation();
+    const local = e.point.clone().sub(STATION).divideScalar(MOUTH_SCALE);
+    cursor.current.copy(local).add(new THREE.Vector3(0, 0.06, 0));
+    if (!operating) return;
+    let nearest: number | null = null;
+    let distance = 0.52;
+    patient.spots.forEach((spot, i) => {
+      const d = new THREE.Vector3(...locations[spot]!).distanceTo(local);
+      if (d < distance && state.progress[i]! < 1) {
+        nearest = i;
+        distance = d;
+      }
+    });
+    onTarget(nearest);
+    if (nearest === null) onHold(false);
+  }
+  function aimSpot(index: number, spot: number) {
+    onTarget(index);
+    cursor.current.set(...locations[spot]!);
+    cursor.current.y += 0.05;
   }
   return (
     <AssetBoundary>
       <Canvas
         shadows
         dpr={[1, 1.75]}
-        camera={{ position: [0, 7, 5.7], fov: 39 }}
-        onCreated={({ camera }) => {
-          camera.lookAt(0, 0.6, 0);
+        camera={{ position: [2.7, 1.95, 3.8], fov: 50, near: 0.005, far: 40 }}
+        onPointerMissed={() => {
+          onTarget(null);
+          onHold(false);
         }}
-        onPointerMissed={() => onTarget(null)}
       >
-        <color attach="background" args={["#d6e4dc"]} />
-        <ambientLight intensity={0.15} />
-        <hemisphereLight args={["#f8f4e7", "#6c8276", 0.4]} />
+        <color attach="background" args={["#c9cdbb"]} />
+        <fog attach="fog" args={["#c9cdbb", 12, 30]} />
+        <ambientLight intensity={0.42} />
+        <hemisphereLight args={["#f8f4e7", "#6c8276", 0.75]} />
         <directionalLight
-          position={[-3, 7, 5]}
-          intensity={1.2}
+          position={[3, 7, -1]}
+          intensity={1.5}
           castShadow
           shadow-mapSize={[2048, 2048]}
-          shadow-normalBias={0.03}
+          shadow-normalBias={0.004}
+          shadow-camera-left={-6}
+          shadow-camera-right={6}
+          shadow-camera-top={6}
+          shadow-camera-bottom={-6}
         />
-        <directionalLight position={[4, 3, -3]} intensity={0.25} />
+        <directionalLight position={[-3, 3, 2]} intensity={0.35} />
         <Suspense
           fallback={
             <Html center>
-              <div className="loading">Preparing your instruments…</div>
+              <div className="loading">Preparing the dental studio…</div>
             </Html>
           }
         >
@@ -150,122 +283,148 @@ export function TreatmentScene({
               <meshBasicMaterial color="white" />
             </mesh>
           </Environment>
-          <group position={[0, -0.12, 0]}>
+          <ClinicRoom
+            patient={state.patient}
+            comfort={state.comfort}
+            mode={mode}
+            onEnter={onEnter}
+          />
+          {/* Original scanned teaching cast remains on the cabinet, apart from the patient's mouth. */}
+          <group position={[-4.3, 1.13, -1.65]} scale={0.085}>
+            <Asset url="/models/dental-arch.glb?gumline=surface-stencils-v3" />
+          </group>
+          <group position={STATION} scale={MOUTH_SCALE}>
             <group
               onPointerMove={aim}
+              onPointerLeave={() => {
+                onHold(false);
+                onTarget(null);
+              }}
               onPointerDown={(e) => {
                 e.stopPropagation();
-                if (operating) onHold(true);
+                if (operating) {
+                  aim(e);
+                  onHold(true);
+                }
               }}
+              onPointerUp={() => onHold(false)}
             >
-              <Asset url="/models/dental-arch.glb?gumline=surface-stencils-v3" onLoaded={onReady} />
+              <Mouth state={state} onLoaded={onReady} />
             </group>
-            {patient.spots.map((spot, i) => {
-              const p = state.progress[i] || 0;
-              const done = state.step >= 5 || p >= 1;
-              return (
-                <group key={spot} position={locations[spot]}>
-                  {state.step > 0 && state.step < 5 && (
+            {mode === "treatment" &&
+              state.step < steps.length &&
+              patient.spots.map((spot, i) => {
+                const p = state.progress[i] || 0;
+                const done = state.step >= 5 || p >= 1;
+                return (
+                  <group key={spot} position={locations[spot]}>
                     <mesh
                       rotation={[-Math.PI / 2, 0, 0]}
-                      scale={state.step === 2 ? [1 - p * 0.5, 1 - p * 0.5, 1] : [1, 1, 1]}
+                      position={[0, 0.04, 0]}
+                      raycast={() => null}
                     >
-                      <circleGeometry
-                        args={[
-                          state.step === 1 ? 0.15 : state.step === 3 ? 0.03 + p * 0.07 : 0.1,
-                          20,
-                        ]}
-                      />
-                      <meshStandardMaterial
-                        color={
-                          state.step === 1 ? "#c2a449" : state.step === 2 ? "#513322" : "#f0e4c5"
-                        }
-                        roughness={0.5}
+                      <ringGeometry args={[0.29, 0.315, 40]} />
+                      <meshBasicMaterial
+                        color={done ? "#93ca96" : active === i ? "#fff2b1" : "#d4be7f"}
                         transparent
-                        opacity={state.step === 1 ? 1 - p : 1}
-                        polygonOffset
-                        polygonOffsetFactor={-2}
+                        opacity={active === i ? 0.95 : 0.55}
+                        side={THREE.DoubleSide}
+                        depthWrite={false}
                       />
                     </mesh>
-                  )}
-                  <Html center position={[0.4, 0.16, 0]} zIndexRange={[20, 10]}>
-                    <button
-                      aria-label={`Treat spot ${i + 1}`}
-                      className={`spot ${done ? "done" : ""} ${active === i ? "active" : ""}`}
-                      style={{ "--progress": `${p * 100}%` } as React.CSSProperties}
-                      disabled={!operating || done}
-                      onPointerDown={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        onTarget(i);
-                        onHold(true);
-                      }}
-                      onPointerUp={() => onHold(false)}
-                      onPointerEnter={() => {
-                        onTarget(i);
-                        cursor.current.set(...locations[spot]!);
-                        cursor.current.y += 0.28;
-                      }}
-                      onPointerLeave={() => {
-                        onTarget(null);
-                        onHold(false);
-                      }}
-                      onKeyDown={(e) => {
-                        if ((e.key === " " || e.key === "Enter") && !e.repeat) {
-                          e.preventDefault();
-                          onTarget(i);
-                          onHold(true);
-                        }
-                      }}
-                      onKeyUp={() => onHold(false)}
-                      onBlur={() => {
-                        onHold(false);
-                        onTarget(null);
-                      }}
+                    <Html
+                      center
+                      position={[spot % 2 === 0 ? -0.67 : 0.67, 0.3, spot < 2 ? -0.14 : 0.14]}
+                      zIndexRange={[20, 10]}
                     >
-                      {done ? "✓" : i + 1}
-                    </button>
-                  </Html>
-                </group>
-              );
-            })}
+                      <button
+                        aria-label={`Treat spot ${i + 1}`}
+                        className={`spot ${done ? "done" : ""} ${active === i ? "active" : ""}`}
+                        style={{ "--progress": `${p * 100}%` } as React.CSSProperties}
+                        disabled={!operating || done}
+                        onPointerDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          e.currentTarget.setPointerCapture(e.pointerId);
+                          aimSpot(i, spot);
+                          onHold(true);
+                        }}
+                        onPointerUp={() => onHold(false)}
+                        onPointerCancel={() => onHold(false)}
+                        onLostPointerCapture={() => onHold(false)}
+                        onPointerEnter={() => aimSpot(i, spot)}
+                        onPointerLeave={() => {
+                          onTarget(null);
+                          onHold(false);
+                        }}
+                        onKeyDown={(e) => {
+                          if ((e.key === " " || e.key === "Enter") && !e.repeat) {
+                            e.preventDefault();
+                            aimSpot(i, spot);
+                            onHold(true);
+                          }
+                        }}
+                        onKeyUp={() => onHold(false)}
+                        onBlur={() => {
+                          onHold(false);
+                          onTarget(null);
+                        }}
+                      >
+                        {done ? "✓" : i + 1}
+                      </button>
+                    </Html>
+                    {active === i && (
+                      <TreatmentParticles active={active} working={effective} tool={tool} />
+                    )}
+                  </group>
+                );
+              })}
+            {operating && (
+              <Suspense fallback={null}>
+                <Instrument tool={tool} position={cursor} working={effective} />
+              </Suspense>
+            )}
           </group>
-          {operating && (
-            <Suspense fallback={null}>
-              <Instrument tool={tool} position={cursor} working={working} />
-            </Suspense>
-          )}
-          <mesh position={[0, -0.28, 0]} receiveShadow>
-            <cylinderGeometry args={[3.25, 3.35, 0.28, 96]} />
-            <meshStandardMaterial color="#c2d4ca" metalness={0.35} roughness={0.35} />
-          </mesh>
-          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.425, 0]} receiveShadow>
-            <planeGeometry args={[200, 200]} />
-            <meshStandardMaterial color="#d6e4dc" roughness={0.8} />
-          </mesh>
-          <ContactShadows position={[0, -0.42, 0]} opacity={0.35} scale={15} blur={2.5} far={8} />
         </Suspense>
-        <CameraReset resetKey={resetKey} />
-        <OrbitControls
-          makeDefault
-          target={[0, 0.65, 0]}
-          enablePan={false}
-          minDistance={6.5}
-          maxDistance={13}
-          minPolarAngle={0.15}
-          maxPolarAngle={1.15}
-          enableRotate={active === null}
-          mouseButtons={{
-            LEFT: THREE.MOUSE.ROTATE,
-            MIDDLE: THREE.MOUSE.DOLLY,
-            RIGHT: THREE.MOUSE.ROTATE,
-          }}
+        <ClinicCamera
+          mode={mode}
+          paused={state.paused}
+          resetKey={resetKey}
+          onNear={onNear}
+          onEnter={onEnter}
         />
+        <CameraReset resetKey={resetKey} mode={mode} />
+        {mode === "treatment" && (
+          <OrbitControls
+            makeDefault
+            target={[STATION.x, STATION.y + 0.015, STATION.z]}
+            enablePan={false}
+            minDistance={0.24}
+            maxDistance={0.85}
+            minPolarAngle={0.1}
+            maxPolarAngle={1.05}
+            minAzimuthAngle={-0.7}
+            maxAzimuthAngle={0.7}
+            enabled={!state.paused}
+            enableRotate={active === null && !working}
+            mouseButtons={{
+              LEFT: THREE.MOUSE.ROTATE,
+              MIDDLE: THREE.MOUSE.DOLLY,
+              RIGHT: THREE.MOUSE.ROTATE,
+            }}
+          />
+        )}
       </Canvas>
     </AssetBoundary>
   );
 }
-
-// Small local assets preload while the player reads the patient introduction.
-for (const name of ["mirror", "polisher", "excavator", "composite", "curing"])
+for (const name of [
+  "mirror",
+  "polisher",
+  "excavator",
+  "composite",
+  "curing",
+  "patient",
+  "treatment-mouth",
+])
   useGLTF.preload(`/models/${name}.glb`);

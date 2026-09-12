@@ -1,0 +1,117 @@
+.clinic-day-line {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  color: #bdc9ae;
+  font-size: 9px;
+}
+.visit-checklist {
+  font-size: 10px;
+  margin-top: 12px;
+  color: #cbd7be;
+}
+.visit-checklist summary {
+  cursor: pointer;
+  padding: 3px 0;
+}
+.visit-checklist ol {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+.visit-checklist li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+}
+.breath-button.needs-rest {
+  color: #f7cf7b;
+}
+.sticker-collection {
+  display: flex;
+  gap: 12px;
+  margin: 0 0 6px;
+}
+.sticker-collection > span {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px dashed #c5d2b943;
+  border-radius: 50%;
+  color: #c5d2b943;
+  font-size: 25px;
+}
+.sticker-collection > .earned {
+  border: 1px solid #e8d49d80;
+  color: #ead491;
+  background: #ddcd9520;
+}
+.menu-stickers {
+  margin-top: 10px;
+}
+.sound-toggle {
+  margin-right: 8px;
+}
+.reset-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+.visit-progress {
+  width: 100%;
+  appearance: none;
+  border: 0;
+  color: var(--mint);
+}
+.visit-progress::-webkit-progress-bar {
+  background: #f0e7c433;
+}
+.visit-progress::-webkit-progress-value {
+  background: var(--mint);
+}
+.visit-progress::-moz-progress-bar {
+  background: var(--mint);
+}
+.reward {
+  padding: 20px;
+  overflow-y: auto;
+}
+@media (max-width: 550px) {
+  .view-treatment .objective-hud {
+    top: 224px;
+  }
+  .results {
+    gap: 24px;
+  }
+  .results b {
+    font-size: 24px;
+  }
+  .reward {
+    gap: 12px;
+  }
+  .reward h2 {
+    font-size: 27px;
+  }
+  .reward-sticker {
+    font-size: 48px;
+  }
+}
+@media (max-height: 600px) and (min-width: 551px) {
+  .view-treatment .objective-hud {
+    top: 25px;
+  }
+  .reward {
+    gap: 8px;
+  }
+  .reward h2 {
+    font-size: 30px;
+  }
+  .reward-sticker {
+    font-size: 38px;
+  }
+  .reward .results {
+    margin: 0;
+  }
+}
