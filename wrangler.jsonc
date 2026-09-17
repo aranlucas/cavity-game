@@ -1,11 +1,17 @@
 {
-  "$schema":"./node_modules/wrangler/config-schema.json",
-  "name":"cavity-rush",
-  "main":"worker/src/index.ts",
-  "compatibility_date":"2026-07-09",
-  "compatibility_flags":["nodejs_compat"],
-  "assets":{"directory":"./client/dist","binding":"ASSETS","not_found_handling":"single-page-application","run_worker_first":["/ws/*"]},
-  "durable_objects":{"bindings":[{"name":"GAME_ROOMS","class_name":"GameRoom"}]},
-  "migrations":[{"tag":"v1","new_sqlite_classes":["GameRoom"]}],
-  "observability":{"enabled":true,"head_sampling_rate":1}
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "cavity-rush",
+  "compatibility_date": "2026-07-09",
+  "assets": {
+    "directory": "./client/dist",
+    "not_found_handling": "single-page-application"
+  },
+  // Retire the Clinic Dash GameRoom Durable Object. v1 is the original
+  // multiplayer migration; v2 deletes the class so production deploy is
+  // static assets only (no Worker script, no /ws).
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["GameRoom"] },
+    { "tag": "v2", "deleted_classes": ["GameRoom"] }
+  ],
+  "observability": { "enabled": true, "head_sampling_rate": 1 }
 }

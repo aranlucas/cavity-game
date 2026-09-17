@@ -1,1 +1,10 @@
-import React from 'react';import ReactDOM from 'react-dom/client';import App from './App';import{MouthPreview}from'./MouthPreview';import './styles.css';const mouthdev=new URLSearchParams(location.search).get('mouthdev');ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode>{mouthdev!==null?<MouthPreview seed={mouthdev}/>:<App/>}</React.StrictMode>);
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+import "./styles.css";
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+);
