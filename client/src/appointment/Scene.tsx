@@ -283,15 +283,10 @@ export function TreatmentScene({
               <meshBasicMaterial color="white" />
             </mesh>
           </Environment>
-          <ClinicRoom
-            patient={state.patient}
-            comfort={state.comfort}
-            mode={mode}
-            onEnter={onEnter}
-          />
+          <ClinicRoom patient={state.patient} mode={mode} onEnter={onEnter} />
           {/* Original scanned teaching cast remains on the cabinet, apart from the patient's mouth. */}
           <group position={[-4.3, 1.13, -1.65]} scale={0.085}>
-            <Asset url="/models/dental-arch.glb?gumline=surface-stencils-v3" />
+            <Asset url="/models/dental-arch.glb" />
           </group>
           <group position={STATION} scale={MOUTH_SCALE}>
             <group
@@ -418,13 +413,5 @@ export function TreatmentScene({
     </AssetBoundary>
   );
 }
-for (const name of [
-  "mirror",
-  "polisher",
-  "excavator",
-  "composite",
-  "curing",
-  "patient",
-  "treatment-mouth",
-])
+for (const name of ["chair", "equipment", "patient", "dental-arch", "treatment-mouth"])
   useGLTF.preload(`/models/${name}.glb`);

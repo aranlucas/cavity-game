@@ -166,7 +166,7 @@ function Plant({ position }: { position: [number, number, number] }) {
     </group>
   );
 }
-function Patient({ patient }: { patient: number; comfort: number }) {
+function Patient({ patient }: { patient: number }) {
   const { scene } = useGLTF("/models/patient.glb");
   const copy = useMemo(() => {
     const c = scene.clone(true);
@@ -212,12 +212,10 @@ function Patient({ patient }: { patient: number; comfort: number }) {
 }
 export function ClinicRoom({
   patient,
-  comfort,
   mode,
   onEnter,
 }: {
   patient: number;
-  comfort: number;
   mode: ViewMode;
   onEnter: () => void;
 }) {
@@ -305,7 +303,7 @@ export function ClinicRoom({
       >
         <primitive object={chair.scene} />
       </group>
-      <Patient patient={patient} comfort={comfort} />
+      <Patient patient={patient} />
       {/* Blender-authored cart, handpieces, hoses, articulated lamp, and stool. */}
       <group onClick={mode === "room" ? onEnter : undefined}>
         <primitive object={equipment.scene} />
