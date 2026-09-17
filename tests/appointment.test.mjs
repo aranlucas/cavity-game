@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {advance,initial,steps,patients} from '../client/src/appointment/rules.ts';
+import {advance,canTreat,initial,steps,patients,treating} from '../client/src/appointment/rules.ts';
 const tick=(s,tool,target=0,n=1)=>{for(let i=0;i<n;i++)s=advance(s,{type:'tick',dt:.05,target,tool});return s};
 test('not started, paused, wrong tool and invalid targets cannot advance treatment',()=>{
  let s=initial();assert.deepEqual(tick(s,'mirror',0,30),s);
@@ -33,4 +33,20 @@ test('all three appointments complete in sequence, with new cases reset',()=>{
 test('large frame delays are clamped and low comfort requires a break',()=>{
  let s={...initial(),started:true,comfort:0};s=advance(s,{type:'tick',dt:100,target:0,tool:'mirror'});assert.equal(s.progress[0],0);
  s=advance(s,{type:'breathe'});s=advance(s,{type:'tick',dt:100,target:0,tool:'mirror'});assert.ok(s.progress[0]<.2);
+});
+test('treating and canTreat are the single live-work gates',()=>{
+ const s={...initial(),started:true};
+ assert.equal(treating(s),true);
+ assert.equal(treating(s,true),false);
+ assert.equal(treating({...s,paused:true}),false);
+ assert.equal(treating({...s,step:steps.length}),false);
+ assert.equal(canTreat(s,'mirror',0),true);
+ assert.equal(canTreat(s,'curing',0),false);
+ assert.equal(canTreat(s,'mirror',null),false);
+ assert.equal(canTreat(s,'mirror',99),false);
+ assert.equal(canTreat({...s,cooldown:true},'mirror',0),false);
+ assert.equal(canTreat({...s,recovering:true},'mirror',0),false);
+ assert.equal(canTreat({...s,comfort:15},'mirror',0),false);
+ assert.equal(canTreat(s,'mirror',0,true),false);
+ assert.equal(canTreat({...s,progress:[1,1]},'mirror',0),false);
 });

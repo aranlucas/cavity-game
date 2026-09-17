@@ -10,8 +10,8 @@ import {
   type MutableRefObject,
 } from "react";
 import * as THREE from "three";
-import { patients, steps, type Appointment, type Tool } from "./rules";
-import { ClinicCamera, ClinicRoom, STATION, type ViewMode } from "./Clinic";
+import { patients, steps, canTreat, treating, type Appointment, type Tool } from "./rules";
+import { ClinicCamera, ClinicRoom, STATION, type MovementPad, type ViewMode } from "./Clinic";
 import { surfaceState } from "./surface";
 
 const MOUTH_SCALE = 0.045;
@@ -182,6 +182,7 @@ function CameraReset({ resetKey, mode }: { resetKey: number; mode: ViewMode }) {
 }
 export function TreatmentScene({
   state,
+  paused,
   tool,
   active,
   working,
@@ -190,10 +191,12 @@ export function TreatmentScene({
   onReady,
   resetKey,
   mode,
+  pad,
   onNear,
   onEnter,
 }: {
   state: Appointment;
+  paused: boolean;
   tool: Tool;
   active: number | null;
   working: boolean;
@@ -202,26 +205,20 @@ export function TreatmentScene({
   onReady: () => void;
   resetKey: number;
   mode: ViewMode;
+  pad: MutableRefObject<MovementPad>;
   onNear: (v: boolean) => void;
   onEnter: () => void;
 }) {
   const cursor = useRef(new THREE.Vector3(3, 3, 1));
   const patient = patients[state.patient]!;
-  const operating = mode === "treatment" && state.started && !state.paused && state.step < 5;
-  const effective =
-    operating &&
-    working &&
-    active !== null &&
-    tool === steps[state.step]?.tool &&
-    !state.cooldown &&
-    !state.recovering &&
-    state.comfort > 15;
+  const session = mode === "treatment" && treating(state, paused);
+  const effective = canTreat(state, tool, working ? active : null, paused);
   function aim(e: ThreeEvent<PointerEvent>) {
     // A ray can cross enamel, cavity inserts and tongue. Only the nearest surface owns this gesture.
     e.stopPropagation();
     const local = e.point.clone().sub(STATION).divideScalar(MOUTH_SCALE);
     cursor.current.copy(local).add(new THREE.Vector3(0, 0.06, 0));
-    if (!operating) return;
+    if (!session) return;
     let nearest: number | null = null;
     let distance = 0.52;
     patient.spots.forEach((spot, i) => {
@@ -302,7 +299,7 @@ export function TreatmentScene({
               }}
               onPointerDown={(e) => {
                 e.stopPropagation();
-                if (operating) {
+                if (session) {
                   aim(e);
                   onHold(true);
                 }
@@ -315,7 +312,7 @@ export function TreatmentScene({
               state.step < steps.length &&
               patient.spots.map((spot, i) => {
                 const p = state.progress[i] || 0;
-                const done = state.step >= 5 || p >= 1;
+                const done = p >= 1;
                 return (
                   <group key={spot} position={locations[spot]}>
                     <mesh
@@ -341,7 +338,7 @@ export function TreatmentScene({
                         aria-label={`Treat spot ${i + 1}`}
                         className={`spot ${done ? "done" : ""} ${active === i ? "active" : ""}`}
                         style={{ "--progress": `${p * 100}%` } as React.CSSProperties}
-                        disabled={!operating || done}
+                        disabled={!session || done}
                         onPointerDown={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -379,7 +376,7 @@ export function TreatmentScene({
                   </group>
                 );
               })}
-            {operating && (
+            {session && (
               <Suspense fallback={null}>
                 <Instrument tool={tool} position={cursor} working={effective} />
               </Suspense>
@@ -388,7 +385,8 @@ export function TreatmentScene({
         </Suspense>
         <ClinicCamera
           mode={mode}
-          paused={state.paused}
+          paused={paused}
+          pad={pad}
           resetKey={resetKey}
           onNear={onNear}
           onEnter={onEnter}
@@ -405,7 +403,7 @@ export function TreatmentScene({
             maxPolarAngle={1.05}
             minAzimuthAngle={-0.7}
             maxAzimuthAngle={0.7}
-            enabled={!state.paused}
+            enabled={!paused}
             enableRotate={active === null && !working}
             mouseButtons={{
               LEFT: THREE.MOUSE.ROTATE,

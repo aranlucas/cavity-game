@@ -1,22 +1,28 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { RoundedBox, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
+import { walk } from "./navigation";
 import { patients } from "./rules";
 
 export type ViewMode = "room" | "treatment";
+export type MoveDir = "forward" | "back" | "left" | "right";
+export type MovementPad = Record<MoveDir, boolean>;
 export const STATION = new THREE.Vector3(0, 1.792, -1.755);
-export const movement = { forward: false, back: false, left: false, right: false };
-import { walk } from "./navigation";
+export function idlePad(): MovementPad {
+  return { forward: false, back: false, left: false, right: false };
+}
 export function ClinicCamera({
   mode,
   paused,
+  pad,
   resetKey,
   onNear,
   onEnter,
 }: {
   mode: ViewMode;
   paused: boolean;
+  pad: MutableRefObject<MovementPad>;
   resetKey: number;
   onNear: (v: boolean) => void;
   onEnter: () => void;
@@ -37,7 +43,7 @@ export function ClinicCamera({
     const clear = () => {
       keys.current.clear();
       look.current.drag = false;
-      Object.keys(movement).forEach((k) => (movement[k as keyof typeof movement] = false));
+      Object.assign(pad.current, idlePad());
     };
     clear();
     if (mode !== "room" || paused) return;
@@ -95,17 +101,18 @@ export function ClinicCamera({
       window.removeEventListener("pointerup", release);
       window.removeEventListener("pointercancel", clear);
     };
-  }, [mode, paused, camera, gl, onEnter]);
+  }, [mode, paused, pad, camera, gl, onEnter]);
   useFrame((_, dt) => {
     if (mode !== "room" || paused) return;
     const k = keys.current,
-      l = look.current;
+      l = look.current,
+      p = pad.current;
     const f =
-      Number(k.has("KeyW") || k.has("ArrowUp") || movement.forward) -
-      Number(k.has("KeyS") || k.has("ArrowDown") || movement.back);
+      Number(k.has("KeyW") || k.has("ArrowUp") || p.forward) -
+      Number(k.has("KeyS") || k.has("ArrowDown") || p.back);
     const r =
-      Number(k.has("KeyD") || k.has("ArrowRight") || movement.right) -
-      Number(k.has("KeyA") || k.has("ArrowLeft") || movement.left);
+      Number(k.has("KeyD") || k.has("ArrowRight") || p.right) -
+      Number(k.has("KeyA") || k.has("ArrowLeft") || p.left);
     const next = walk(camera.position.x, camera.position.z, l.yaw, f, r, dt);
     camera.position.x = next.x;
     camera.position.z = next.z;
