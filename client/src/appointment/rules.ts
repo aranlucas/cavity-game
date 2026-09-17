@@ -88,6 +88,28 @@ export interface Appointment {
 export type Action =
   | { type: "start" | "pause" | "breathe" | "next" | "restart" | "newDay" }
   | { type: "tick"; dt: number; target: number | null; tool: Tool };
+/** Live treatment step: started, not complete, and not paused. */
+export function treating(state: Appointment, paused = state.paused) {
+  return state.started && !paused && state.step < steps.length;
+}
+/** The held tool can apply work to this tooth right now. */
+export function canTreat(
+  state: Appointment,
+  tool: Tool,
+  target: number | null,
+  paused = state.paused,
+) {
+  if (!treating(state, paused) || state.cooldown || state.recovering || state.comfort <= 15)
+    return false;
+  if (tool !== steps[state.step]!.tool) return false;
+  return (
+    target !== null &&
+    Number.isInteger(target) &&
+    target >= 0 &&
+    target < state.progress.length &&
+    state.progress[target]! < 1
+  );
+}
 export function initial(patient = 0): Appointment {
   return {
     day: 1,
@@ -127,7 +149,7 @@ export function advance(s: Appointment, a: Action): Appointment {
   if (a.type === "pause")
     return s.started && s.step < steps.length ? { ...s, paused: !s.paused } : s;
   if (a.type === "breathe")
-    return s.started && !s.paused && s.step < steps.length
+    return treating(s)
       ? {
           ...s,
           comfort: Math.min(100, s.comfort + 25),
@@ -138,16 +160,9 @@ export function advance(s: Appointment, a: Action): Appointment {
         }
       : s;
   if (a.type !== "tick") return s;
-  if (!s.started || s.paused || s.step >= steps.length) return s;
+  if (!treating(s)) return s;
   const dt = Number.isFinite(a.dt) ? Math.max(0, Math.min(a.dt, 0.1)) : 0;
-  const valid =
-    a.target !== null &&
-    Number.isInteger(a.target) &&
-    a.target >= 0 &&
-    a.target < s.progress.length &&
-    s.progress[a.target]! < 1;
-  const needsRest = s.comfort <= 15 || s.recovering;
-  const operating = valid && a.tool === steps[s.step]!.tool && !s.cooldown && !needsRest;
+  const operating = canTreat(s, a.tool, a.target);
   const drilling = operating && a.tool === "excavator";
   const heat = Math.max(0, Math.min(100, s.heat + dt * (drilling ? 58 : -55)));
   const cooldown = heat >= 100 || (s.cooldown && heat > 15);
@@ -155,7 +170,7 @@ export function advance(s: Appointment, a: Action): Appointment {
     0,
     Math.min(100, s.comfort + dt * (heat > 80 && drilling ? -22 : operating ? -0.8 : 1.7)),
   );
-  const recovering = comfort <= 15 || (needsRest && comfort < 35);
+  const recovering = comfort <= 15 || ((s.comfort <= 15 || s.recovering) && comfort < 35);
   const progress = [...s.progress];
   if (operating && !cooldown && !recovering)
     progress[a.target!] = Math.min(1, progress[a.target!]! + dt / steps[s.step]!.duration);
