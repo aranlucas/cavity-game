@@ -1,3 +1,0 @@
-import type {Vec3} from './protocol'; export const MATCH_DURATION_MS=300000,ROOM_COOLDOWN_MS=10000; export const CORRIDOR_BOUNDS={minX:-2.2,maxX:2.2,minZ:-8.2,maxZ:8.2};
-export const CLINIC_ROOMS=[-5,0,5].flatMap((z,i)=>[{id:`L${i+1}`,position:[-3.35,0,z] as Vec3,facing:Math.PI/2,door:[-2.05,0,z] as Vec3},{id:`R${i+1}`,position:[3.35,0,z] as Vec3,facing:-Math.PI/2,door:[2.05,0,z] as Vec3}]); export const SPAWN_POSITION:Vec3=[0,0,7];
-export function clampClinicPosition(p:Vec3):Vec3{return[Math.max(CORRIDOR_BOUNDS.minX,Math.min(CORRIDOR_BOUNDS.maxX,p[0])),0,Math.max(CORRIDOR_BOUNDS.minZ,Math.min(CORRIDOR_BOUNDS.maxZ,p[2]))]} export function isAtDoor(p:Vec3,id:string){const r=CLINIC_ROOMS.find(x=>x.id===id);return!!r&&Math.hypot(p[0]-r.door[0],p[2]-r.door[2])<1.05}

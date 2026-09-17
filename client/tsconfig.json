@@ -8,5 +8,5 @@
     "allowImportingTsExtensions": true,
     "types": ["vite/client"]
   },
-  "include": ["src", "../shared", "vite.config.ts"]
+  "include": ["src", "vite.config.ts"]
 }

@@ -6,7 +6,7 @@ A gentle single-player dentist game with a Blender-modeled patient, treatment mo
 
 ```bash
 npm install
-npm run dev -w client
+npm run dev
 ```
 
 Open the local URL printed by Vite (normally http://localhost:5173). The appointment game works without a backend, account, or room code. It saves progress and the sound setting in this browser's local storage every second and when leaving the page. Returning starts in the room with the current visit ready to resume. If storage is unavailable, the menu reports that saving is unavailable.
@@ -63,10 +63,10 @@ Both builders accept arguments after `--`: use `--output-dir /path/to/models` to
 ```bash
 npm test
 npx tsc -p client/tsconfig.json --noEmit
-npm run build  # Client build, Worker typecheck, Wrangler deployment dry run
+npm run build  # Appointment client build, then Wrangler assets-only dry run
 npm run lint
 ```
 
 GitHub Actions runs the tests, build, and lint checks on pushes and pull requests.
 
-The earlier multiplayer clinic code remains in `Game.tsx`, `worker/`, and `shared/` as legacy source. It is not used by the new appointment experience. `npm run deploy` explicitly publishes through the existing Cloudflare configuration; no deployment is needed to play locally.
+`npm run deploy` publishes the Vite `client/dist` static assets through Wrangler. There is no Cloudflare Worker script and no `/ws` Durable Object. The appointment game does not need a backend to play locally.
