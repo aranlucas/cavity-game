@@ -31,7 +31,7 @@ export function decodeSave(raw: string | null): SavedGame | null {
       0,
     );
     if (!integer(s.day, 1, 1_000_000) || !integer(s.dayScore, 0, maxDayScore)) return null;
-    if (!integer(s.score, 0, maxScore) || !integer(s.breaks, 0, 1_000_000)) return null;
+    if (!integer(s.score, 0, maxScore)) return null;
     if (!inRange(s.comfort, 0, 100) || !inRange(s.heat, 0, 100)) return null;
     if ([s.started, s.paused, s.cooldown, s.recovering].some((v) => typeof v !== "boolean"))
       return null;
@@ -70,7 +70,6 @@ export function decodeSave(raw: string | null): SavedGame | null {
         heat: s.heat,
         score: s.score,
         paused: false,
-        breaks: s.breaks,
         cooldown: s.cooldown as boolean,
         recovering: s.recovering as boolean,
       },

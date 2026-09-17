@@ -61,6 +61,20 @@ test("invalid, incompatible or impossible saves are rejected without crashing", 
   invalid.forEach((raw) => assert.equal(decodeSave(raw), null, `reject ${raw?.slice(0, 80)}`));
 });
 
+test("legacy interest and breaks fields are ignored so old saves still load", () => {
+  const leftover = {
+    ...initial(),
+    breaks: 7,
+    interest: "space",
+  };
+  const decoded = decodeSave(encode(leftover));
+  assert.deepEqual(decoded.appointment, initial());
+  assert.equal("breaks" in decoded.appointment, false);
+  assert.equal("interest" in decoded.appointment, false);
+  const garbageBreaks = decodeSave(encode({ ...initial(), breaks: "often" }));
+  assert.deepEqual(garbageBreaks.appointment, initial());
+});
+
 test("storage failures are harmless, and successful writes can be loaded", () => {
   const records = new Map();
   const storage = {

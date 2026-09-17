@@ -15,6 +15,7 @@ test('bur overheats, locks treatment, and recovers after release',()=>{
 test('breathing restores comfort and clears heat without changing treatment progress',()=>{
  let s={...initial(),started:true,comfort:30,heat:85};const p=[...s.progress];s=advance(s,{type:'breathe'});
  assert.equal(s.comfort,55);assert.equal(s.heat,0);assert.deepEqual(s.progress,p);
+ assert.equal('breaks' in s,false);
 });
 test('all three appointments complete in sequence, with new cases reset',()=>{
  for(let patient=0;patient<patients.length;patient++){

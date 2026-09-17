@@ -42,7 +42,6 @@ export const patients = [
     name: "Mia",
     age: 7,
     color: "#e8b192",
-    interest: "space",
     quote: "Will my smile be ready for my space adventure?",
     spots: [0, 1],
     sticker: "Cosmic explorer",
@@ -52,7 +51,6 @@ export const patients = [
     name: "Leo",
     age: 8,
     color: "#b77c52",
-    interest: "dinosaurs",
     quote: "I want teeth as shiny as a T. rex!",
     spots: [1, 2, 3],
     sticker: "Dinosaur champion",
@@ -62,7 +60,6 @@ export const patients = [
     name: "Ava",
     age: 6,
     color: "#efc5aa",
-    interest: "the ocean",
     quote: "Can we pretend the blue light is a jellyfish?",
     spots: [0, 2, 3],
     sticker: "Ocean adventurer",
@@ -81,7 +78,6 @@ export interface Appointment {
   heat: number;
   score: number;
   paused: boolean;
-  breaks: number;
   cooldown: boolean;
   recovering: boolean;
 }
@@ -123,7 +119,6 @@ export function initial(patient = 0): Appointment {
     heat: 0,
     score: 0,
     paused: false,
-    breaks: 0,
     cooldown: false,
     recovering: false,
   };
@@ -156,7 +151,6 @@ export function advance(s: Appointment, a: Action): Appointment {
           heat: 0,
           cooldown: false,
           recovering: (s.recovering || s.comfort <= 15) && s.comfort + 25 < 35,
-          breaks: s.breaks + 1,
         }
       : s;
   if (a.type !== "tick") return s;
