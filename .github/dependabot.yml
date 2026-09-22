@@ -7,6 +7,23 @@ updates:
     open-pull-requests-limit: 5
   - package-ecosystem: npm
     directory: /
+    groups:
+      react-runtime:
+        patterns:
+          - react
+          - react-dom
+          - "@types/react*"
+          - "@react-three/*"
+      vite:
+        patterns:
+          - vite
+          - "@vitejs/*"
+    # React Three Fiber 9.7 requires React versions below 19.3.
+    ignore:
+      - dependency-name: react
+        versions: [">=19.3"]
+      - dependency-name: react-dom
+        versions: [">=19.3"]
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
