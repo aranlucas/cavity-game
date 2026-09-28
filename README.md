@@ -1,6 +1,17 @@
 # Little Smiles
 
-A gentle single-player dentist game with a Blender-modeled patient, treatment mouth, chair, instruments, and dental equipment. Walk around the 3D clinic, approach the patient chair, and complete an appointment: inspect → clean → repair → fill → cure. Care for three fictional patients each day, manage their comfort, and collect their smile-club stickers.
+[![Checks](https://github.com/aranlucas/cavity-game/actions/workflows/checks.yml/badge.svg?branch=main)](https://github.com/aranlucas/cavity-game/actions/workflows/checks.yml)
+![React Three Fiber](https://img.shields.io/badge/React_Three_Fiber-3D_game-000000?logo=threedotjs&logoColor=white)
+![Blender](https://img.shields.io/badge/Blender-original_3D_assets-E87D0D?logo=blender&logoColor=white)
+
+**A cozy clinic, three little patients, and one very shiny smile at a time.**
+
+Little Smiles is a gentle single-player dental-care game. Walk around a 3D clinic, greet a patient, and finish a playful appointment: inspect → clean → repair → fill → cure. Care for three fictional patients each day, keep them comfortable, and earn their smile-club stickers.
+
+![Original Blender render of a patient in the Little Smiles clinic](assets/patient-preview.png)
+
+*This is an asset preview from the project's Blender models, not a gameplay screenshot.*
+
 
 ## Run
 
