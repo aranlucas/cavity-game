@@ -10,3 +10,6 @@ output/
 .env
 .env.*
 !.env.example
+
+# Cloudflare CLI build output and generated types
+.cloudflare/
