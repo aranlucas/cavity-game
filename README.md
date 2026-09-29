@@ -80,5 +80,3 @@ npm run lint
 GitHub Actions runs the tests, build, and lint checks on pushes and pull requests.
 
 `npm run deploy` publishes the Vite `client/dist` static assets through Wrangler. There is no Cloudflare Worker script and no `/ws` Durable Object. The appointment game does not need a backend to play locally.
-
-See [Cloudflare CLI migration](CF_MIGRATION.md) for cf deployment and compatibility details.
