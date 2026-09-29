@@ -10,8 +10,7 @@ Little Smiles is a gentle single-player dental-care game. Walk around a 3D clini
 
 ![Original Blender render of a patient in the Little Smiles clinic](assets/patient-preview.png)
 
-*This is an asset preview from the project's Blender models, not a gameplay screenshot.*
-
+_This is an asset preview from the project's Blender models, not a gameplay screenshot._
 
 ## Run
 
@@ -39,11 +38,11 @@ The patient and treatment mouth are original stylized models authored in Blender
 
 Editable Blender files and export scripts are included:
 
-| Asset | Blender source | Builder |
-| --- | --- | --- |
-| Patient and treatment mouth | `assets/patient-studio.blend` | `scripts/build-patient.py` |
-| Dental delivery equipment | `assets/clinic-equipment.blend` | `scripts/build-equipment.py` |
-| Teaching cast, five instruments, and chair | `assets/dental-studio.blend` | `scripts/process-scan.py`, `scripts/build-instruments.py`, `scripts/build-chair.py` |
+| Asset                                      | Blender source                  | Builder                                                                             |
+| ------------------------------------------ | ------------------------------- | ----------------------------------------------------------------------------------- |
+| Patient and treatment mouth                | `assets/patient-studio.blend`   | `scripts/build-patient.py`                                                          |
+| Dental delivery equipment                  | `assets/clinic-equipment.blend` | `scripts/build-equipment.py`                                                        |
+| Teaching cast, five instruments, and chair | `assets/dental-studio.blend`    | `scripts/process-scan.py`, `scripts/build-instruments.py`, `scripts/build-chair.py` |
 
 The shipped patient, mouth, and equipment GLBs total about **600 KB**. They use Meshopt compression with the loader's bundled decoder. Current byte counts and validation results are recorded in `assets/asset-validation.json`. The separate teaching cast is 555,668 bytes, reduced from its 34 MB source scan.
 
