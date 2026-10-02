@@ -9,8 +9,8 @@ importers:
   .:
     devDependencies:
       cf:
-        specifier: ^1.0.0-beta.7
-        version: 1.0.0-beta.7
+        specifier: 1.0.0-beta.10
+        version: 1.0.0-beta.10
       oxfmt:
         specifier: ^0.70.0
         version: 0.70.0
@@ -800,8 +800,8 @@ packages:
   blake3-wasm@2.1.5:
     resolution: {integrity: sha512-F1+K8EbfOZE49dtoPtmxUQrpXaBIl3ICvasLh+nJta0xkz+9kF/7uet9fLnwKqhDrmj6g+6K3Tw9yQPUg2ka5g==}
 
-  cf@1.0.0-beta.7:
-    resolution: {integrity: sha512-SVcXMHue6KMIJmJTbEcenbaXLIe1Rwp28gT7tuVrVvWiavP1fTxe01VEvaEphwmDK7E76DtoWncoqQKiFHMwig==}
+  cf@1.0.0-beta.10:
+    resolution: {integrity: sha512-pv3zg8Y0sjgNuyKpDNsEBszTvSgRDzHccvHybJ6u4BjvesMZpS2T2twnOGvDo0PSnie/bCbA+hgzKWaDuIKtBw==}
     engines: {node: '>=22'}
     hasBin: true
 
@@ -1380,7 +1380,7 @@ snapshots:
 
   blake3-wasm@2.1.5: {}
 
-  cf@1.0.0-beta.7:
+  cf@1.0.0-beta.10:
     dependencies:
       '@cloudflare/build-output-utils': 0.8.4
       '@cloudflare/codemods': 0.3.0
