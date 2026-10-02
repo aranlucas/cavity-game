@@ -158,7 +158,7 @@ export default function App() {
   };
   return (
     <main className={`game-shell view-${view}`}>
-      <div className="game-world" aria-label="Three dimensional dental clinic">
+      <div className="game-world" role="region" aria-label="Three dimensional dental clinic">
         <TreatmentScene
           state={state}
           paused={paused}

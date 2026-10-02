@@ -3,6 +3,7 @@ import { type MovementPad, type MoveDir, type ViewMode } from "./Clinic";
 import { patients, steps, tools, type Appointment, type Tool } from "./rules";
 
 const labels = ["Dental mirror", "Polisher", "Precision bur", "Composite", "Curing light"];
+const compactLabels = ["Mirror", "Polish", "Repair", "Fill", "Cure"];
 const padOrder: MoveDir[] = ["forward", "left", "back", "right"];
 function ToolIcon({ index }: { index: number }) {
   return (
@@ -259,7 +260,10 @@ export function ClinicHud({
               >
                 <kbd>{i + 1}</kbd>
                 <ToolIcon index={i} />
-                <span>{labels[i]}</span>
+                <span className="full-label">{labels[i]}</span>
+                <span className="compact-label" aria-hidden="true">
+                  {compactLabels[i]}
+                </span>
                 {step.tool === t && <i />}
               </button>
             ))}

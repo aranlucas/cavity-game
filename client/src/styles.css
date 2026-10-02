@@ -1,4 +1,17 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap");
+@font-face {
+  font-family: "DM Sans";
+  src: url("/fonts/dm-sans-latin-wght-normal.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 1000;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Manrope";
+  src: url("/fonts/manrope-latin-wght-normal.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+}
 :root {
   font-family: "DM Sans", sans-serif;
   color: #edf1e5;
@@ -756,5 +769,128 @@ button:hover:not(:disabled) {
     width: 44px;
     height: 44px;
     font-size: 12px;
+  }
+}
+
+/* Functional text stays legible against the clinic's moving scene. */
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+h1 small,
+.comfort-row,
+.clinic-day-line,
+.visit-checklist,
+.breath-button,
+.heat-hud,
+.tool > span,
+.tool kbd,
+.treatment-hint,
+.interact-prompt > span,
+.controls-list p,
+.pause-menu .menu-tip,
+.pause-menu details,
+.secondary,
+.results small {
+  font-size: 12px;
+}
+.game-actions button,
+.camera-reset,
+.breath-button,
+.secondary {
+  min-height: 44px;
+}
+.room-objective {
+  padding: 14px 18px;
+  background: var(--glass);
+  border-radius: 12px;
+  text-shadow: none;
+}
+.objective-hud {
+  padding: 10px 16px;
+  background: var(--glass);
+  border-radius: 12px;
+  text-shadow: none;
+  width: max-content;
+  max-width: calc(100vw - 28px);
+}
+.reset-actions {
+  flex-wrap: wrap;
+}
+.tool > span {
+  line-height: 1.25;
+}
+.tool .compact-label {
+  display: none;
+}
+.movement-pad {
+  grid-template-columns: repeat(3, 44px);
+}
+.movement-pad button {
+  width: 44px;
+  height: 44px;
+}
+@media (max-width: 550px) {
+  .patient-hud {
+    width: 202px;
+  }
+  .game-actions button {
+    font-size: 12px;
+  }
+  .room-objective {
+    bottom: 244px;
+    max-width: calc(100vw - 36px);
+  }
+  .movement-pad {
+    bottom: 128px;
+    grid-template-columns: repeat(3, 44px);
+  }
+  .movement-pad button {
+    width: 44px;
+    height: 44px;
+  }
+  .view-treatment .objective-hud {
+    top: 270px;
+  }
+  .tool {
+    width: clamp(52px, 17vw, 72px);
+    min-width: 0;
+    height: 94px;
+  }
+  .tool .full-label {
+    display: none;
+  }
+  .tool .compact-label {
+    display: block;
+  }
+  .treatment-hint {
+    bottom: 136px;
+  }
+}
+@media (max-width: 900px) {
+  .hud-heading {
+    gap: 8px;
+  }
+  .clinic-mark {
+    font-size: 26px;
+  }
+}
+@media (max-height: 550px) and (min-width: 551px) and (max-width: 900px) {
+  .game-shell {
+    min-height: 0;
+  }
+  .room-objective {
+    left: 240px;
+    top: 18px;
+    bottom: auto;
+    max-width: calc(100vw - 360px);
+  }
+  .room-objective h2 {
+    font-size: 18px;
+  }
+  .movement-pad {
+    display: grid;
+    right: 18px;
+    bottom: 114px;
   }
 }
