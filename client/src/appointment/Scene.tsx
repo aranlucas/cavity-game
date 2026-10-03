@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   type ReactNode,
+  type CSSProperties,
   type MutableRefObject,
 } from "react";
 import * as THREE from "three";
@@ -15,14 +16,17 @@ import { ClinicCamera, ClinicRoom, STATION, type MovementPad, type ViewMode } fr
 import { surfaceState } from "./surface";
 
 const MOUTH_SCALE = 0.045;
+
 const locations: [number, number, number][] = [
   [-1.46, 0.59, -0.43],
   [1.46, 0.59, -0.43],
   [-1.46, 0.59, 0.43],
   [1.46, 0.59, 0.43],
 ];
+
 function Asset({ url }: { url: string }) {
   const { scene } = useGLTF(url);
+
   const copy = useMemo(() => {
     const c = scene.clone(true);
     c.traverse((o) => {
@@ -31,13 +35,17 @@ function Asset({ url }: { url: string }) {
         o.receiveShadow = true;
       }
     });
+
     return c;
   }, [scene]);
+
   return <primitive object={copy} />;
 }
+
 function Mouth({ state, onLoaded }: { state: Appointment; onLoaded: () => void }) {
   const { scene } = useGLTF("/models/treatment-mouth.glb");
-  const copy = useMemo(() => {
+
+  const { copy, originalScales } = useMemo(() => {
     const c = scene.clone(true);
     c.traverse((o) => {
       if (o instanceof THREE.Mesh && o.name.startsWith("filling_")) {
@@ -46,8 +54,10 @@ function Mouth({ state, onLoaded }: { state: Appointment; onLoaded: () => void }
           : o.material.clone();
       }
     });
-    return c;
+
+    return { copy: c, originalScales: new WeakMap<THREE.Object3D, THREE.Vector3>() };
   }, [scene]);
+
   useEffect(
     () => () =>
       copy.traverse((o) => {
@@ -65,14 +75,22 @@ function Mouth({ state, onLoaded }: { state: Appointment; onLoaded: () => void }
       if (!(o instanceof THREE.Mesh)) return;
       o.receiveShadow = true;
       const match = /^(plaque|decay|filling)_(\d)/.exec(o.name);
+
       if (!match) return;
       const spot = Number(match[2]);
       const index = patients[state.patient]!.spots.indexOf(spot);
       const visual = surfaceState(state.step, state.progress[index] ?? 0, index >= 0);
-      const amount = visual[match[1] as "plaque" | "decay" | "filling"];
+      const layer = match[1];
+
+      if (layer !== "plaque" && layer !== "decay" && layer !== "filling") return;
+      const amount = visual[layer];
       o.visible = amount > 0.001;
-      if (!o.userData.originalScale) o.userData.originalScale = o.scale.clone();
-      o.scale.copy(o.userData.originalScale as THREE.Vector3);
+
+      const originalScale = originalScales.get(o) ?? o.scale.clone();
+
+      originalScales.set(o, originalScale);
+      o.scale.copy(originalScale);
+
       // The authoring origins are the centers of each local repair insert.
       if (match[1] === "filling") {
         o.scale.multiplyScalar(0.65 + 0.35 * amount);
@@ -84,9 +102,11 @@ function Mouth({ state, onLoaded }: { state: Appointment; onLoaded: () => void }
         });
       } else o.scale.multiplyScalar(Math.max(0.001, Math.sqrt(amount)));
     });
-  }, [copy, state.step, state.progress, state.patient]);
+  }, [copy, originalScales, state.step, state.progress, state.patient]);
+
   return <primitive object={copy} />;
 }
+
 function Instrument({
   tool,
   position,
@@ -103,6 +123,7 @@ function Instrument({
     group.current.rotation.z =
       -0.65 + (working && tool !== "curing" ? Math.sin(clock.elapsedTime * 60) * 0.018 : 0);
   });
+
   return (
     <group ref={group} position={[3, 3, 1]} rotation={[0.3, 0, -0.65]}>
       <group position={[-0.18, 0.14, 0]}>
@@ -114,6 +135,7 @@ function Instrument({
     </group>
   );
 }
+
 function TreatmentParticles({
   active,
   working,
@@ -129,7 +151,9 @@ function TreatmentParticles({
     if (!ref.current) return;
     ref.current.visible =
       working && active !== null && (tool === "polisher" || tool === "excavator");
+
     if (!ref.current.visible) return;
+
     for (let i = 0; i < 16; i++) {
       const life = (clock.elapsedTime * 1.8 + i / 16) % 1;
       const angle = i * 2.399;
@@ -142,8 +166,10 @@ function TreatmentParticles({
       dummy.updateMatrix();
       ref.current.setMatrixAt(i, dummy.matrix);
     }
+
     ref.current.instanceMatrix.needsUpdate = true;
   });
+
   return (
     <instancedMesh ref={ref} args={[undefined, undefined, 16]} frustumCulled={false}>
       <sphereGeometry args={[1, 5, 4]} />
@@ -151,6 +177,7 @@ function TreatmentParticles({
     </instancedMesh>
   );
 }
+
 class AssetBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   state = { failed: false };
   static getDerivedStateFromError() {
@@ -166,6 +193,7 @@ class AssetBoundary extends Component<{ children: ReactNode }, { failed: boolean
     );
   }
 }
+
 function CameraReset({ resetKey, mode }: { resetKey: number; mode: ViewMode }) {
   const { camera, controls, size } = useThree();
   useEffect(() => {
@@ -173,13 +201,17 @@ function CameraReset({ resetKey, mode }: { resetKey: number; mode: ViewMode }) {
     const fit = Math.max(1, 0.95 / (size.width / size.height));
     camera.position.set(STATION.x, STATION.y + 0.32 * fit, STATION.z + 0.18 * fit);
     camera.lookAt(STATION.x, STATION.y + 0.015, STATION.z);
-    if (controls && "target" in controls) {
-      (controls.target as THREE.Vector3).set(STATION.x, STATION.y + 0.015, STATION.z);
-      if ("update" in controls && typeof controls.update === "function") controls.update();
+
+    if (controls && "target" in controls && controls.target instanceof THREE.Vector3) {
+      controls.target.set(STATION.x, STATION.y + 0.015, STATION.z);
+
+      if ("update" in controls && controls.update instanceof Function) controls.update();
     }
   }, [resetKey, mode, camera, controls, size.width, size.height]);
+
   return null;
 }
+
 export function TreatmentScene({
   state,
   paused,
@@ -213,29 +245,35 @@ export function TreatmentScene({
   const patient = patients[state.patient]!;
   const session = mode === "treatment" && treating(state, paused);
   const effective = canTreat(state, tool, working ? active : null, paused);
+
   function aim(e: ThreeEvent<PointerEvent>) {
     // A ray can cross enamel, cavity inserts and tongue. Only the nearest surface owns this gesture.
     e.stopPropagation();
     const local = e.point.clone().sub(STATION).divideScalar(MOUTH_SCALE);
     cursor.current.copy(local).add(new THREE.Vector3(0, 0.06, 0));
+
     if (!session) return;
     let nearest: number | null = null;
     let distance = 0.52;
     patient.spots.forEach((spot, i) => {
       const d = new THREE.Vector3(...locations[spot]!).distanceTo(local);
+
       if (d < distance && state.progress[i]! < 1) {
         nearest = i;
         distance = d;
       }
     });
     onTarget(nearest);
+
     if (nearest === null) onHold(false);
   }
+
   function aimSpot(index: number, spot: number) {
     onTarget(index);
     cursor.current.set(...locations[spot]!);
     cursor.current.y += 0.05;
   }
+
   return (
     <AssetBoundary>
       <Canvas
@@ -294,6 +332,7 @@ export function TreatmentScene({
               }}
               onPointerDown={(e) => {
                 e.stopPropagation();
+
                 if (session) {
                   aim(e);
                   onHold(true);
@@ -308,6 +347,11 @@ export function TreatmentScene({
               patient.spots.map((spot, i) => {
                 const p = state.progress[i] || 0;
                 const done = p >= 1;
+
+                const progressStyle: CSSProperties & { "--progress": string } = {
+                  "--progress": `${p * 100}%`,
+                };
+
                 return (
                   <group key={spot} position={locations[spot]}>
                     <mesh
@@ -332,7 +376,7 @@ export function TreatmentScene({
                       <button
                         aria-label={`Treat spot ${i + 1}`}
                         className={`spot ${done ? "done" : ""} ${active === i ? "active" : ""}`}
-                        style={{ "--progress": `${p * 100}%` } as React.CSSProperties}
+                        style={progressStyle}
                         disabled={!session || done}
                         onPointerDown={(e) => {
                           e.preventDefault();
@@ -411,5 +455,6 @@ export function TreatmentScene({
     </AssetBoundary>
   );
 }
+
 for (const name of ["chair", "equipment", "patient", "dental-arch", "treatment-mouth"])
   useGLTF.preload(`/models/${name}.glb`);

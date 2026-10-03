@@ -6,12 +6,15 @@ import { idlePad, type ViewMode } from "./appointment/Clinic";
 import { loadGame, saveGame } from "./appointment/save";
 import { useClinicSound } from "./appointment/useClinicSound";
 import "./appointment/hud.css";
+
 export default function App() {
   const [saved] = useState(loadGame);
   const [state, dispatch] = useReducer(advance, saved?.appointment ?? initial());
+
   const [tool, setTool] = useState<Tool>(
     () => steps[saved?.appointment.step ?? 0]?.tool ?? "mirror",
   );
+
   const [sound, setSound] = useState(saved?.sound ?? true);
   const [saveAvailable, setSaveAvailable] = useState(true);
   const [target, setTarget] = useState<number | null>(null);
@@ -32,6 +35,7 @@ export default function App() {
   const saveSnapshot = useRef({ state, sound });
   useEffect(() => {
     saveSnapshot.current = { state, sound };
+
     if (state.step > previousStep.current) chime();
     previousStep.current = state.step;
   }, [state, sound, chime]);
@@ -40,12 +44,16 @@ export default function App() {
       const snapshot = saveSnapshot.current;
       setSaveAvailable(saveGame(snapshot.state, snapshot.sound));
     };
+
     const timer = window.setInterval(persist, 1000);
+
     const hidden = () => {
       if (document.hidden) persist();
     };
+
     window.addEventListener("pagehide", persist);
     document.addEventListener("visibilitychange", hidden);
+
     return () => {
       window.clearInterval(timer);
       window.removeEventListener("pagehide", persist);
@@ -57,6 +65,7 @@ export default function App() {
     live.current = { target, held, tool, seated };
   }, [target, held, tool, seated]);
   const onReady = useCallback(() => setReady(true), []);
+
   const enter = useCallback(() => {
     if (!ready || !near || paused) return;
     setHeld(false);
@@ -64,22 +73,28 @@ export default function App() {
     setView("treatment");
     dispatch({ type: "start" });
   }, [ready, near, paused]);
+
   const leave = () => {
     setHeld(false);
     setTarget(null);
     setBreathing(false);
     setView("room");
   };
+
   const release = () => setHeld(false);
+
   const setMenuOpen = (open: boolean) => {
     if (open) release();
     setMenu(open);
   };
+
   useEffect(() => {
     let last = performance.now();
+
     const timer = setInterval(() => {
       const now = performance.now(),
         s = live.current;
+
       if (s.seated)
         dispatch({
           type: "tick",
@@ -89,6 +104,7 @@ export default function App() {
         });
       last = now;
     }, 50);
+
     return () => clearInterval(timer);
   }, []);
   useEffect(() => {
@@ -99,31 +115,38 @@ export default function App() {
   useEffect(() => {
     const hidden = () => {
       release();
+
       if (document.hidden) setMenu(true);
     };
+
     const key = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
         setMenu((m) => !m);
         release();
       }
+
       if (e.target instanceof HTMLElement && e.target.closest("dialog,input")) return;
       const n = Number(e.key);
+
       if (n >= 1 && n <= tools.length) {
         setTool(tools[n - 1]!);
         release();
       }
+
       if (e.code === "KeyQ") {
         release();
         setBreathing(false);
         setView("room");
       }
     };
+
     window.addEventListener("pointerup", release);
     window.addEventListener("pointercancel", release);
     window.addEventListener("blur", release);
     window.addEventListener("keydown", key);
     document.addEventListener("visibilitychange", hidden);
+
     return () => {
       window.removeEventListener("pointerup", release);
       window.removeEventListener("pointercancel", release);
@@ -135,10 +158,12 @@ export default function App() {
   useEffect(() => {
     if (!breathing || menu || view === "room") return;
     const started = performance.now();
+
     const timer = setTimeout(() => {
       dispatch({ type: "breathe" });
       setBreathing(false);
     }, breathRemaining.current);
+
     return () => {
       clearTimeout(timer);
       breathRemaining.current = Math.max(
@@ -147,6 +172,7 @@ export default function App() {
       );
     };
   }, [breathing, menu, view]);
+
   const resetVisit = (type: "next" | "restart" | "newDay") => {
     dispatch({ type });
     setTool("mirror");
@@ -156,6 +182,7 @@ export default function App() {
     setBreathing(false);
     setMenu(false);
   };
+
   return (
     <main className={`game-shell view-${view}`}>
       <div className="game-world" role="region" aria-label="Three dimensional dental clinic">

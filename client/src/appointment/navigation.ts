@@ -6,6 +6,7 @@ const obstacles = [
   [-4.8, -3.65, -3.8, 0.4],
   [-4.1, -1.3, 2.75, 4],
 ];
+
 export function canStand(x: number, z: number) {
   return (
     x > -4.4 &&
@@ -17,6 +18,7 @@ export function canStand(x: number, z: number) {
     )
   );
 }
+
 export function walk(
   x: number,
   z: number,
@@ -28,7 +30,10 @@ export function walk(
   const speed = (Math.max(0, Math.min(dt, 0.05)) * 2.1) / (Math.hypot(forward, right) || 1);
   const dx = (-Math.sin(yaw) * forward + Math.cos(yaw) * right) * speed;
   const dz = (-Math.cos(yaw) * forward - Math.sin(yaw) * right) * speed;
+
   if (canStand(x + dx, z)) x += dx;
+
   if (canStand(x, z + dz)) z += dz;
+
   return { x, z };
 }
