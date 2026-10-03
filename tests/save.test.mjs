@@ -5,14 +5,19 @@ import { SAVE_KEY, decodeSave, loadGame, saveGame } from "../client/src/appointm
 
 const encode = (appointment, extra = {}) =>
   JSON.stringify({ version: 1, sound: true, appointment, ...extra });
+
 const complete = (appointment) => {
   let state = advance(appointment, { type: "start" });
+
   for (let guard = 0; guard < 4000 && state.step < steps.length; guard++) {
     const target =
       state.cooldown || state.recovering ? null : state.progress.findIndex((p) => p < 1);
+
     state = advance(state, { type: "tick", dt: 0.1, target, tool: steps[state.step].tool });
   }
+
   assert.equal(state.step, steps.length, "an entire visit should finish");
+
   return state;
 };
 
@@ -30,6 +35,7 @@ test("saved treatment retains tooth progress, heat, day points and settings, the
     stickers: [0],
     day: 3,
   };
+
   const decoded = decodeSave(encode(state, { sound: false }));
   assert.deepEqual(decoded.appointment, { ...state, paused: false });
   assert.equal(decoded.sound, false);
@@ -58,6 +64,7 @@ test("invalid, incompatible or impossible saves are rejected without crashing", 
     encode({ ...initial(), started: false, step: 1 }),
     encode({ ...initial(), started: true, step: 5, score: 900, dayScore: 0 }),
   ];
+
   invalid.forEach((raw) => assert.equal(decodeSave(raw), null, `reject ${raw?.slice(0, 80)}`));
 });
 
@@ -67,6 +74,7 @@ test("legacy interest and breaks fields are ignored so old saves still load", ()
     breaks: 7,
     interest: "space",
   };
+
   const decoded = decodeSave(encode(leftover));
   assert.deepEqual(decoded.appointment, initial());
   assert.equal("breaks" in decoded.appointment, false);
@@ -77,14 +85,17 @@ test("legacy interest and breaks fields are ignored so old saves still load", ()
 
 test("storage failures are harmless, and successful writes can be loaded", () => {
   const records = new Map();
+
   const storage = {
     getItem: (key) => records.get(key) ?? null,
     setItem: (key, value) => records.set(key, value),
   };
+
   assert.equal(loadGame(storage), null);
   assert.equal(saveGame(initial(), true, storage), true);
   assert.ok(records.has(SAVE_KEY));
   assert.deepEqual(loadGame(storage).appointment, initial());
+
   const unavailable = {
     getItem: () => {
       throw new Error("denied");
@@ -93,6 +104,7 @@ test("storage failures are harmless, and successful writes can be loaded", () =>
       throw new Error("quota");
     },
   };
+
   assert.equal(loadGame(unavailable), null);
   assert.equal(saveGame(initial(), false, unavailable), false);
 });
@@ -100,6 +112,7 @@ test("storage failures are harmless, and successful writes can be loaded", () =>
 test("a complete clinic day banks each visit once, survives saves, and keeps the sticker album", () => {
   let state = initial();
   let total = 0;
+
   for (let patient = 0; patient < patients.length; patient++) {
     state = complete(state);
     total += state.score;
@@ -112,8 +125,10 @@ test("a complete clinic day banks each visit once, survives saves, and keeps the
     assert.equal(duplicateTick.dayScore, total);
     state = decodeSave(encode(duplicateTick)).appointment;
     state = advance(state, { type: "next" });
+
     if (patient < patients.length - 1) assert.equal(state.dayScore, total);
   }
+
   assert.equal(state.day, 2);
   assert.equal(state.patient, 0);
   assert.equal(state.dayScore, 0);
@@ -157,4 +172,31 @@ test("nonfinite deltas and fractional targets cannot poison an appointment", () 
     advance(state, { type: "tick", dt: 0.1, target: 0.5, tool: "mirror" }).progress[0],
     0,
   );
+});
+
+test("save boundary rejects wrong primitive types without coercion", () => {
+  for (const field of ["patient", "step", "day", "dayScore", "score", "comfort", "heat"]) {
+    for (const value of ["0", null, false, {}, [], 1e100]) {
+      assert.equal(decodeSave(encode({ ...initial(), [field]: value })), null);
+    }
+  }
+
+  for (const field of ["started", "paused", "cooldown", "recovering"]) {
+    for (const value of ["false", 0, null, {}, []]) {
+      assert.equal(decodeSave(encode({ ...initial(), [field]: value })), null);
+    }
+  }
+});
+
+test("saved arrays reject fractional identifiers and nonnumeric progress", () => {
+  for (const progress of [
+    ["0", 0],
+    [false, 0],
+    [null, 0],
+  ]) {
+    assert.equal(decodeSave(encode({ ...initial(), progress })), null);
+  }
+
+  assert.equal(decodeSave(encode({ ...initial(), stickers: [0.5] })), null);
+  assert.equal(decodeSave(encode({ ...initial(), patient: 0.5 })), null);
 });

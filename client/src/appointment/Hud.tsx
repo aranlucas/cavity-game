@@ -3,8 +3,11 @@ import { type MovementPad, type MoveDir, type ViewMode } from "./Clinic";
 import { patients, steps, tools, type Appointment, type Tool } from "./rules";
 
 const labels = ["Dental mirror", "Polisher", "Precision bur", "Composite", "Curing light"];
+
 const compactLabels = ["Mirror", "Polish", "Repair", "Fill", "Cure"];
+
 const padOrder: MoveDir[] = ["forward", "left", "back", "right"];
+
 function ToolIcon({ index }: { index: number }) {
   return (
     <svg
@@ -35,6 +38,7 @@ function ToolIcon({ index }: { index: number }) {
     </svg>
   );
 }
+
 export function ClinicHud({
   state,
   view,
@@ -79,6 +83,7 @@ export function ClinicHud({
   const patient = patients[state.patient]!;
   const complete = state.step >= steps.length;
   const step = steps[Math.min(state.step, steps.length - 1)]!;
+
   const progress = complete
     ? 100
     : Math.round(
@@ -86,12 +91,14 @@ export function ClinicHud({
           steps.length) *
           100,
       );
+
   const dialog = useRef<HTMLDialogElement>(null);
   const [fullscreenError, setFullscreenError] = useState("");
   useEffect(() => {
     if (menu) dialog.current?.showModal();
     else dialog.current?.close();
   }, [menu]);
+
   return (
     <>
       <aside className="patient-hud">

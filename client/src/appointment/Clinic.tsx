@@ -6,12 +6,17 @@ import { walk } from "./navigation";
 import { patients } from "./rules";
 
 export type ViewMode = "room" | "treatment";
+
 export type MoveDir = "forward" | "back" | "left" | "right";
+
 export type MovementPad = Record<MoveDir, boolean>;
+
 export const STATION = new THREE.Vector3(0, 1.792, -1.755);
+
 export function idlePad(): MovementPad {
   return { forward: false, back: false, left: false, right: false };
 }
+
 export function ClinicCamera({
   mode,
   paused,
@@ -45,10 +50,14 @@ export function ClinicCamera({
       look.current.drag = false;
       Object.assign(pad.current, idlePad());
     };
+
     clear();
+
     if (mode !== "room" || paused) return;
+
     const down = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLElement && e.target.closest("dialog, input")) return;
+
       if (
         [
           "KeyW",
@@ -64,26 +73,33 @@ export function ClinicCamera({
         e.preventDefault();
         keys.current.add(e.code);
       }
+
       if (e.code === "KeyE" && near.current && !e.repeat) onEnter();
     };
+
     const up = (e: KeyboardEvent) => keys.current.delete(e.code);
+
     const pointerDown = (e: PointerEvent) => {
       if (e.button !== 0) return;
       look.current.drag = true;
       look.current.x = e.clientX;
       look.current.y = e.clientY;
     };
+
     const pointerMove = (e: PointerEvent) => {
       const l = look.current;
+
       if (!l.drag) return;
       l.yaw -= (e.clientX - l.x) * 0.003;
       l.pitch = THREE.MathUtils.clamp(l.pitch - (e.clientY - l.y) * 0.003, -0.8, 0.65);
       l.x = e.clientX;
       l.y = e.clientY;
     };
+
     const release = () => {
       look.current.drag = false;
     };
+
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
     window.addEventListener("blur", clear);
@@ -91,6 +107,7 @@ export function ClinicCamera({
     window.addEventListener("pointermove", pointerMove);
     window.addEventListener("pointerup", release);
     window.addEventListener("pointercancel", clear);
+
     return () => {
       clear();
       window.removeEventListener("keydown", down);
@@ -104,27 +121,34 @@ export function ClinicCamera({
   }, [mode, paused, pad, camera, gl, onEnter]);
   useFrame((_, dt) => {
     if (mode !== "room" || paused) return;
+
     const k = keys.current,
       l = look.current,
       p = pad.current;
+
     const f =
       Number(k.has("KeyW") || k.has("ArrowUp") || p.forward) -
       Number(k.has("KeyS") || k.has("ArrowDown") || p.back);
+
     const r =
       Number(k.has("KeyD") || k.has("ArrowRight") || p.right) -
       Number(k.has("KeyA") || k.has("ArrowLeft") || p.left);
+
     const next = walk(camera.position.x, camera.position.z, l.yaw, f, r, dt);
     camera.position.x = next.x;
     camera.position.z = next.z;
     camera.rotation.set(l.pitch, l.yaw, 0);
     const close = Math.hypot(camera.position.x - STATION.x, camera.position.z - STATION.z) < 2.4;
+
     if (close !== near.current) {
       near.current = close;
       onNear(close);
     }
   });
+
   return null;
 }
+
 function Box({
   position,
   size,
@@ -151,6 +175,7 @@ function Box({
     </RoundedBox>
   );
 }
+
 function Plant({ position }: { position: [number, number, number] }) {
   return (
     <group position={position}>
@@ -173,8 +198,10 @@ function Plant({ position }: { position: [number, number, number] }) {
     </group>
   );
 }
+
 function Patient({ patient }: { patient: number }) {
   const { scene } = useGLTF("/models/patient.glb");
+
   const copy = useMemo(() => {
     const c = scene.clone(true);
     const materials = new Map<THREE.Material, THREE.Material>();
@@ -182,24 +209,33 @@ function Patient({ patient }: { patient: number }) {
       if (!(o instanceof THREE.Mesh)) return;
       o.castShadow = true;
       o.receiveShadow = true;
+
       const customize = (source: THREE.Material) => {
         if (materials.has(source)) return materials.get(source)!;
         const m = source.clone();
+
         if (m instanceof THREE.MeshStandardMaterial) {
           if (m.name.startsWith("Patient skin")) m.color.set(patients[patient]!.color);
+
           if (m.name.startsWith("Patient shirt"))
             m.color.set(["#d6ad65", "#819aa8", "#c18e8a"][patient]!);
+
           if (m.name.startsWith("Patient hair"))
             m.color.set(["#503525", "#30281f", "#754b2f"][patient]!);
           m.envMapIntensity = 0.5;
         }
+
         materials.set(source, m);
+
         return m;
       };
+
       o.material = Array.isArray(o.material) ? o.material.map(customize) : customize(o.material);
     });
+
     return c;
   }, [scene, patient]);
+
   useEffect(
     () => () => {
       const materials = new Set<THREE.Material>();
@@ -211,12 +247,14 @@ function Patient({ patient }: { patient: number }) {
     },
     [copy],
   );
+
   return (
     <group position={[0, 0, -0.6]}>
       <primitive object={copy} />
     </group>
   );
 }
+
 export function ClinicRoom({
   patient,
   mode,
@@ -228,11 +266,14 @@ export function ClinicRoom({
 }) {
   const chair = useGLTF("/models/chair.glb");
   const equipment = useGLTF("/models/equipment.glb");
+
   const lampTarget = useMemo(() => {
     const target = new THREE.Object3D();
     target.position.copy(STATION);
+
     return target;
   }, []);
+
   useEffect(() => {
     equipment.scene.traverse((object) => {
       if (object instanceof THREE.Mesh) {
@@ -241,6 +282,7 @@ export function ClinicRoom({
       }
     });
   }, [equipment.scene]);
+
   return (
     <group>
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>

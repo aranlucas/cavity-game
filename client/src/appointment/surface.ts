@@ -2,6 +2,7 @@
 export function surfaceState(step: number, progress: number, affected: boolean) {
   if (!affected) return { plaque: 0, decay: 0, filling: 1, cured: true };
   const p = Math.max(0, Math.min(1, progress));
+
   return {
     plaque: step < 1 ? 1 : step === 1 ? 1 - p : 0,
     decay: step < 2 ? 1 : step === 2 ? 1 - p : 0,

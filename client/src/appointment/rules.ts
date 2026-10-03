@@ -1,5 +1,7 @@
 export const tools = ["mirror", "polisher", "excavator", "composite", "curing"] as const;
+
 export type Tool = (typeof tools)[number];
+
 export const steps = [
   {
     title: "Look closely",
@@ -37,6 +39,7 @@ export const steps = [
     duration: 1.8,
   },
 ] as const;
+
 export const patients = [
   {
     name: "Mia",
@@ -66,6 +69,7 @@ export const patients = [
     symbol: "≈",
   },
 ];
+
 export interface Appointment {
   day: number;
   dayScore: number;
@@ -81,13 +85,16 @@ export interface Appointment {
   cooldown: boolean;
   recovering: boolean;
 }
+
 export type Action =
   | { type: "start" | "pause" | "breathe" | "next" | "restart" | "newDay" }
   | { type: "tick"; dt: number; target: number | null; tool: Tool };
+
 /** Live treatment step: started, not complete, and not paused. */
 export function treating(state: Appointment, paused = state.paused) {
   return state.started && !paused && state.step < steps.length;
 }
+
 /** The held tool can apply work to this tooth right now. */
 export function canTreat(
   state: Appointment,
@@ -97,7 +104,9 @@ export function canTreat(
 ) {
   if (!treating(state, paused) || state.cooldown || state.recovering || state.comfort <= 15)
     return false;
+
   if (tool !== steps[state.step]!.tool) return false;
+
   return (
     target !== null &&
     Number.isInteger(target) &&
@@ -106,6 +115,7 @@ export function canTreat(
     state.progress[target]! < 1
   );
 }
+
 export function initial(patient = 0): Appointment {
   return {
     day: 1,
@@ -123,16 +133,19 @@ export function initial(patient = 0): Appointment {
     recovering: false,
   };
 }
+
 export function advance(s: Appointment, a: Action): Appointment {
   if (
     a.type === "newDay" ||
     (a.type === "next" && s.step >= steps.length && s.patient === patients.length - 1)
   )
     return { ...initial(), day: s.day + 1, stickers: s.stickers };
+
   if (a.type === "next")
     return s.step >= steps.length
       ? { ...initial(s.patient + 1), day: s.day, dayScore: s.dayScore, stickers: s.stickers }
       : s;
+
   if (a.type === "restart")
     return {
       ...initial(s.patient),
@@ -140,9 +153,12 @@ export function advance(s: Appointment, a: Action): Appointment {
       dayScore: s.dayScore - (s.step >= steps.length ? s.score : 0),
       stickers: s.stickers,
     };
+
   if (a.type === "start") return { ...s, started: true };
+
   if (a.type === "pause")
     return s.started && s.step < steps.length ? { ...s, paused: !s.paused } : s;
+
   if (a.type === "breathe")
     return treating(s)
       ? {
@@ -153,24 +169,31 @@ export function advance(s: Appointment, a: Action): Appointment {
           recovering: (s.recovering || s.comfort <= 15) && s.comfort + 25 < 35,
         }
       : s;
+
   if (a.type !== "tick") return s;
+
   if (!treating(s)) return s;
   const dt = Number.isFinite(a.dt) ? Math.max(0, Math.min(a.dt, 0.1)) : 0;
   const operating = canTreat(s, a.tool, a.target);
   const drilling = operating && a.tool === "excavator";
   const heat = Math.max(0, Math.min(100, s.heat + dt * (drilling ? 58 : -55)));
   const cooldown = heat >= 100 || (s.cooldown && heat > 15);
+
   const comfort = Math.max(
     0,
     Math.min(100, s.comfort + dt * (heat > 80 && drilling ? -22 : operating ? -0.8 : 1.7)),
   );
+
   const recovering = comfort <= 15 || ((s.comfort <= 15 || s.recovering) && comfort < 35);
   const progress = [...s.progress];
+
   if (operating && !cooldown && !recovering)
     progress[a.target!] = Math.min(1, progress[a.target!]! + dt / steps[s.step]!.duration);
+
   if (progress.every((p) => p >= 1)) {
     const score = s.score + Math.round(comfort) + progress.length * 50;
     const complete = s.step + 1 === steps.length;
+
     return {
       ...s,
       step: s.step + 1,
@@ -185,5 +208,6 @@ export function advance(s: Appointment, a: Action): Appointment {
         complete && !s.stickers.includes(s.patient) ? [...s.stickers, s.patient] : s.stickers,
     };
   }
+
   return { ...s, progress, comfort, heat, cooldown, recovering };
 }

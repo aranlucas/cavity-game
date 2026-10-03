@@ -6,8 +6,10 @@ export function useClinicSound(enabled: boolean, working: boolean, tool: Tool) {
   const context = useRef<AudioContext | null>(null);
   useEffect(() => {
     if (!enabled) return;
+
     const unlock = () => {
       if (typeof AudioContext === "undefined") return;
+
       try {
         context.current ??= new AudioContext();
         void context.current.resume().catch(() => {});
@@ -15,8 +17,10 @@ export function useClinicSound(enabled: boolean, working: boolean, tool: Tool) {
         // Sound is optional; treatment remains playable if the browser denies audio.
       }
     };
+
     window.addEventListener("pointerdown", unlock);
     window.addEventListener("keydown", unlock);
+
     return () => {
       window.removeEventListener("pointerdown", unlock);
       window.removeEventListener("keydown", unlock);
@@ -31,6 +35,7 @@ export function useClinicSound(enabled: boolean, working: boolean, tool: Tool) {
   );
   useEffect(() => {
     const c = context.current;
+
     if (
       !enabled ||
       !working ||
@@ -48,6 +53,7 @@ export function useClinicSound(enabled: boolean, working: boolean, tool: Tool) {
     gain.gain.linearRampToValueAtTime(0.018, c.currentTime + 0.05);
     oscillator.connect(gain).connect(c.destination);
     oscillator.start();
+
     return () => {
       gain.gain.cancelScheduledValues(c.currentTime);
       gain.gain.setTargetAtTime(0, c.currentTime, 0.01);
@@ -58,8 +64,10 @@ export function useClinicSound(enabled: boolean, working: boolean, tool: Tool) {
       };
     };
   }, [enabled, working, tool]);
+
   return useCallback(() => {
     const c = context.current;
+
     if (!enabled || !c || c.state !== "running") return;
     [660, 880].forEach((frequency, i) => {
       const oscillator = c.createOscillator();
