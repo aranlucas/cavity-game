@@ -18,7 +18,7 @@
     "@oxlint/plugins": "1.85.0",
     "cf": "1.0.0-beta.10",
     "oxfmt": "^0.70.0",
-    "oxlint": "1.85.0",
+    "oxlint": "1.86.0",
     "typescript": "^7.0.2",
     "wrangler": "^4.145.0"
   }
