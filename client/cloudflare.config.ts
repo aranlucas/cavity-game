@@ -3,6 +3,7 @@ import { defineConfig, exports } from "cf/config";
 export default defineConfig({
   worker: {
     exports: {
+      // Retire the former multiplayer namespace without a Worker entrypoint.
       GameRoom: exports.durableObject({ state: "deleted" }),
     },
     name: "cavity-rush",

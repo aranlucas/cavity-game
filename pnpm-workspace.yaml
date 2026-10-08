@@ -1,7 +1,10 @@
+packages:
+  - client
+
 allowBuilds:
   esbuild: true
   workerd: true
-minimumReleaseAgeExclude:
-  - "@cloudflare/codemods@0.2.1"
-  - cf@1.0.0-beta.10
-  - wrangler@4.143.0
+
+# The Cloudflare beta tooling pins an older sharp with vulnerable librsvg.
+overrides:
+  sharp: 0.35.5

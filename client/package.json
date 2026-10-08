@@ -4,8 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build"
+    "dev": "cf dev",
+    "build": "tsc -b && cf deploy --dry-run",
+    "deploy": "tsc -b && cf deploy"
   },
   "dependencies": {
     "@react-three/drei": "10.7.9",
@@ -16,10 +17,12 @@
     "zod": "4.6.5"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "2.0.0-beta.sha-52b0dc0e9",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/three": "^0.186.0",
     "@vitejs/plugin-react": "^6.1.1",
+    "cf": "1.0.0-beta.13",
     "typescript": "^7.0.2",
     "vite": "^8.3.1"
   }
