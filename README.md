@@ -16,41 +16,10 @@ _This is an asset preview from the project's Blender models, not a gameplay scre
 
 ```bash
 npm install
-npm install -g portless@0.15.7
 npm run dev
 ```
 
-Open the local URL printed by Portless (normally https://cavity-game.localhost). The appointment game works without a backend, account, or room code. It saves progress and the sound setting in this browser's local storage every second and when leaving the page. Returning starts in the room with the current visit ready to resume. If storage is unavailable, the menu reports that saving is unavailable.
-
-### Development URL with Portless
-
-The normal `npm run dev` command uses
-[Portless](https://github.com/vercel-labs/portless/tree/v0.15.7) for a stable local URL.
-Install its CLI once with **Node.js 24 or newer** (within this project's supported
-range), then run:
-
-```sh
-npm install -g portless@0.15.7
-npm run dev
-```
-
-Open **https://cavity-game.localhost** with the default proxy settings.
-Portless starts its shared proxy automatically. Its first HTTPS run creates and
-trusts a local certificate authority and may prompt for administrator privileges
-to bind port 443 or update local hostname entries. Start it from an interactive
-terminal and review those prompts. `portless doctor` diagnoses local setup issues.
-
-Portless supplies Vite with a free port, a loopback host, and `--strictPort`.
-It starts Vite with the existing Cloudflare plugin directly, since `cf dev`
-does not forward arbitrary Vite CLI flags.
-The root command runs inside the `client` workspace.
-
-Linked Git worktrees receive a branch-name prefix, such as
-`https://fix-ui.cavity-game.localhost`; use the URL Portless prints.
-
-Browser storage and offline caches belong to each origin. Existing data at a
-numbered localhost URL stays there; use the app's export/import flow when available
-to move data to the named URL.
+Open **https://cavity-game.localhost**. `npm run dev` runs through [Portless](https://github.com/vercel-labs/portless) (a dev dependency); its first run may ask for `sudo` to bind port 443 and trust a local certificate. The appointment game works without a backend, account, or room code. It saves progress and the sound setting in this browser's local storage every second and when leaving the page. Returning starts in the room with the current visit ready to resume. If storage is unavailable, the menu reports that saving is unavailable.
 
 ## Play
 
