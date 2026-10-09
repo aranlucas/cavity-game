@@ -21,6 +21,36 @@ npm run dev
 
 Open the local URL printed by Vite (normally http://localhost:5173). The appointment game works without a backend, account, or room code. It saves progress and the sound setting in this browser's local storage every second and when leaving the page. Returning starts in the room with the current visit ready to resume. If storage is unavailable, the menu reports that saving is unavailable.
 
+### Named local URL with Portless
+
+[Portless](https://github.com/vercel-labs/portless/tree/v0.15.7) gives this checkout a
+stable local URL. Complete the local setup above, use **Node.js 24 or newer**
+(within this project's supported range), then run:
+
+```sh
+npm install -g portless@0.15.7
+npm run dev:portless
+```
+
+Open **https://cavity-game.localhost** with the default proxy settings.
+Portless starts its shared proxy automatically. Its first HTTPS run creates and
+trusts a local certificate authority and may prompt for administrator privileges
+to bind port 443 or update local hostname entries. Start it from an interactive
+terminal and review those prompts. `portless doctor` diagnoses local setup issues.
+
+Portless supplies Vite with a free port, a loopback host, and `--strictPort`.
+It starts Vite with the existing Cloudflare plugin directly, since `cf dev`
+does not forward arbitrary Vite CLI flags.
+The root command runs inside the `client` workspace.
+
+Linked Git worktrees receive a branch-name prefix, such as
+`https://fix-ui.cavity-game.localhost`; use the URL Portless prints.
+Use `npm run dev` for the existing direct-server workflow.
+
+Browser storage and offline caches belong to each origin. Existing data at a
+numbered localhost URL stays there; use the app's export/import flow when available
+to move data to the named URL.
+
 ## Play
 
 - **WASD / arrow keys** move around the clinic. Drag to look around. On touch screens, use the movement pad and drag the scene.
