@@ -11,7 +11,6 @@ updates:
     directory: /
     schedule:
       interval: weekly
-    open-pull-requests-limit: 1
     patterns: ["*"]
     multi-ecosystem-group: weekly-dependencies
   - package-ecosystem: npm
@@ -24,6 +23,5 @@ updates:
         versions: [">=19.3"]
     schedule:
       interval: weekly
-    open-pull-requests-limit: 1
     patterns: ["*"]
     multi-ecosystem-group: weekly-dependencies
