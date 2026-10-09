@@ -6,7 +6,7 @@
   ],
   "scripts": {
     "dev": "npm run dev -w client",
-    "dev:portless": "npm run dev:portless -w client",
+    "dev:direct": "npm run dev:direct -w client",
     "build": "npm run build -w client",
     "deploy": "npm run deploy -w client",
     "lint": "oxlint client tests",
