@@ -5,7 +5,6 @@
   "type": "module",
   "scripts": {
     "dev": "portless run --name cavity-game vite",
-    "dev:direct": "cf dev",
     "build": "tsc -b && cf deploy --dry-run",
     "deploy": "tsc -b && cf deploy"
   },
