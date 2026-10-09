@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "cf dev",
+    "dev": "portless run --name cavity-game vite",
     "build": "tsc -b && cf deploy --dry-run",
     "deploy": "tsc -b && cf deploy"
   },
@@ -23,6 +23,7 @@
     "@types/three": "^0.186.0",
     "@vitejs/plugin-react": "^6.1.2",
     "cf": "1.0.0-beta.13",
+    "portless": "0.15.7",
     "typescript": "^7.0.2",
     "vite": "^8.3.2"
   }
