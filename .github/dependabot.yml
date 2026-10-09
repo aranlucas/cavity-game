@@ -1,23 +1,21 @@
 version: 2
+
+multi-ecosystem-groups:
+  weekly-dependencies:
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 1
+
 updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 1
+    patterns: ["*"]
+    multi-ecosystem-group: weekly-dependencies
   - package-ecosystem: npm
     directory: /
-    groups:
-      react-runtime:
-        patterns:
-          - react
-          - react-dom
-          - "@types/react*"
-          - "@react-three/*"
-      vite:
-        patterns:
-          - vite
-          - "@vitejs/*"
     # React Three Fiber 9.7 requires React versions below 19.3.
     ignore:
       - dependency-name: react
@@ -26,4 +24,6 @@ updates:
         versions: [">=19.3"]
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 1
+    patterns: ["*"]
+    multi-ecosystem-group: weekly-dependencies
