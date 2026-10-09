@@ -4,6 +4,9 @@ multi-ecosystem-groups:
   weekly-dependencies:
     schedule:
       interval: weekly
+      day: thursday
+      time: "06:00"
+      timezone: America/Los_Angeles
     open-pull-requests-limit: 1
 
 updates:
@@ -11,6 +14,9 @@ updates:
     directory: /
     schedule:
       interval: weekly
+      day: thursday
+      time: "06:00"
+      timezone: America/Los_Angeles
     patterns: ["*"]
     multi-ecosystem-group: weekly-dependencies
   - package-ecosystem: npm
@@ -23,5 +29,8 @@ updates:
         versions: [">=19.3"]
     schedule:
       interval: weekly
+      day: thursday
+      time: "06:00"
+      timezone: America/Los_Angeles
     patterns: ["*"]
     multi-ecosystem-group: weekly-dependencies
