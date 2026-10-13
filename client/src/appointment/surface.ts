@@ -1,6 +1,7 @@
 /** Mesh visibility is derived from treatment state, never persisted separately. */
 export function surfaceState(step: number, progress: number, affected: boolean) {
-  if (!affected) return { plaque: 0, decay: 0, filling: 1, cured: true };
+  if (!affected) {return { plaque: 0, decay: 0, filling: 1, cured: true };}
+
   const p = Math.max(0, Math.min(1, progress));
 
   return {

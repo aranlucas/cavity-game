@@ -15,10 +15,10 @@ test("tooth damage is removed before the filling grows into the modeled recess",
 
 test("unaffected molars stay healthy in every stage", () => {
   for (let step = 0; step <= 5; step++)
-    assert.deepEqual(surfaceState(step, 0.4, false), {
+    {assert.deepEqual(surfaceState(step, 0.4, false), {
       plaque: 0,
       decay: 0,
       filling: 1,
       cured: true,
-    });
+    });}
 });

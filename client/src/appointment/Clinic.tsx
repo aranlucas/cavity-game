@@ -37,7 +37,8 @@ export function ClinicCamera({
   const look = useRef({ yaw: 0, pitch: -0.07, drag: false, x: 0, y: 0 });
   const near = useRef(false);
   useEffect(() => {
-    if (mode !== "room") return;
+    if (mode !== "room") {return;}
+
     camera.position.set(2.7, 1.95, 3.8);
     look.current.yaw = 0.44;
     look.current.pitch = -0.16;
@@ -53,10 +54,10 @@ export function ClinicCamera({
 
     clear();
 
-    if (mode !== "room" || paused) return;
+    if (mode !== "room" || paused) {return;}
 
     const down = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLElement && e.target.closest("dialog, input")) return;
+      if (e.target instanceof HTMLElement && e.target.closest("dialog, input")) {return;}
 
       if (
         [
@@ -74,13 +75,14 @@ export function ClinicCamera({
         keys.current.add(e.code);
       }
 
-      if (e.code === "KeyE" && near.current && !e.repeat) onEnter();
+      if (e.code === "KeyE" && near.current && !e.repeat) {onEnter();}
     };
 
     const up = (e: KeyboardEvent) => keys.current.delete(e.code);
 
     const pointerDown = (e: PointerEvent) => {
-      if (e.button !== 0) return;
+      if (e.button !== 0) {return;}
+
       look.current.drag = true;
       look.current.x = e.clientX;
       look.current.y = e.clientY;
@@ -89,7 +91,8 @@ export function ClinicCamera({
     const pointerMove = (e: PointerEvent) => {
       const l = look.current;
 
-      if (!l.drag) return;
+      if (!l.drag) {return;}
+
       l.yaw -= (e.clientX - l.x) * 0.003;
       l.pitch = THREE.MathUtils.clamp(l.pitch - (e.clientY - l.y) * 0.003, -0.8, 0.65);
       l.x = e.clientX;
@@ -120,11 +123,11 @@ export function ClinicCamera({
     };
   }, [mode, paused, pad, camera, gl, onEnter]);
   useFrame((_, dt) => {
-    if (mode !== "room" || paused) return;
+    if (mode !== "room" || paused) {return;}
 
-    const k = keys.current,
-      l = look.current,
-      p = pad.current;
+    const k = keys.current;
+      const l = look.current;
+      const p = pad.current;
 
     const f =
       Number(k.has("KeyW") || k.has("ArrowUp") || p.forward) -
@@ -206,22 +209,25 @@ function Patient({ patient }: { patient: number }) {
     const c = scene.clone(true);
     const materials = new Map<THREE.Material, THREE.Material>();
     c.traverse((o) => {
-      if (!(o instanceof THREE.Mesh)) return;
+      if (!(o instanceof THREE.Mesh)) {return;}
+
       o.castShadow = true;
       o.receiveShadow = true;
 
       const customize = (source: THREE.Material) => {
-        if (materials.has(source)) return materials.get(source)!;
+        if (materials.has(source)) {return materials.get(source)!;}
+
         const m = source.clone();
 
         if (m instanceof THREE.MeshStandardMaterial) {
-          if (m.name.startsWith("Patient skin")) m.color.set(patients[patient]!.color);
+          if (m.name.startsWith("Patient skin")) {m.color.set(patients[patient]!.color);}
 
           if (m.name.startsWith("Patient shirt"))
-            m.color.set(["#d6ad65", "#819aa8", "#c18e8a"][patient]!);
+            {m.color.set(["#d6ad65", "#819aa8", "#c18e8a"][patient]!);}
 
           if (m.name.startsWith("Patient hair"))
-            m.color.set(["#503525", "#30281f", "#754b2f"][patient]!);
+            {m.color.set(["#503525", "#30281f", "#754b2f"][patient]!);}
+
           m.envMapIntensity = 0.5;
         }
 
@@ -241,7 +247,7 @@ function Patient({ patient }: { patient: number }) {
       const materials = new Set<THREE.Material>();
       copy.traverse((o) => {
         if (o instanceof THREE.Mesh)
-          (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => materials.add(m));
+          {(Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => materials.add(m));}
       });
       materials.forEach((m) => m.dispose());
     },

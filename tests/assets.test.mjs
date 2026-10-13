@@ -34,7 +34,7 @@ test("Blender exports ship as self-contained web assets", () => {
     "composite",
     "curing",
   ])
-    model(name);
+    {model(name);}
 });
 
 test("mouth keeps separate editable plaque, decay and filling inserts for all four target teeth", () => {
@@ -43,7 +43,7 @@ test("mouth keeps separate editable plaque, decay and filling inserts for all fo
 
   for (let target = 0; target < 4; target++) {
     for (const kind of ["plaque", "decay", "filling"])
-      assert.ok(names.has(`${kind}_${target}`), `missing ${kind}_${target}`);
+      {assert.ok(names.has(`${kind}_${target}`), `missing ${kind}_${target}`);}
   }
 });
 
@@ -51,8 +51,8 @@ test("patient retains materials for three patient appearance variants", () => {
   const names = model("patient").materials.map((m) => m.name);
 
   for (const name of ["Patient skin", "Patient shirt", "Patient hair"])
-    assert.ok(
+    {assert.ok(
       names.some((n) => n.startsWith(name)),
       `missing ${name}`,
-    );
+    );}
 });

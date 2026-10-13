@@ -72,17 +72,20 @@ function Mouth({ state, onLoaded }: { state: Appointment; onLoaded: () => void }
   }, [copy, onLoaded]);
   useEffect(() => {
     copy.traverse((o) => {
-      if (!(o instanceof THREE.Mesh)) return;
+      if (!(o instanceof THREE.Mesh)) {return;}
+
       o.receiveShadow = true;
       const match = /^(plaque|decay|filling)_(\d)/.exec(o.name);
 
-      if (!match) return;
+      if (!match) {return;}
+
       const spot = Number(match[2]);
       const index = patients[state.patient]!.spots.indexOf(spot);
       const visual = surfaceState(state.step, state.progress[index] ?? 0, index >= 0);
       const layer = match[1];
 
-      if (layer !== "plaque" && layer !== "decay" && layer !== "filling") return;
+      if (layer !== "plaque" && layer !== "decay" && layer !== "filling") {return;}
+
       const amount = visual[layer];
       o.visible = amount > 0.001;
 
@@ -100,7 +103,7 @@ function Mouth({ state, onLoaded }: { state: Appointment; onLoaded: () => void }
             m.roughness = visual.cured ? 0.22 : 0.6;
           }
         });
-      } else o.scale.multiplyScalar(Math.max(0.001, Math.sqrt(amount)));
+      } else {o.scale.multiplyScalar(Math.max(0.001, Math.sqrt(amount)));}
     });
   }, [copy, originalScales, state.step, state.progress, state.patient]);
 
@@ -118,7 +121,8 @@ function Instrument({
 }) {
   const group = useRef<THREE.Group>(null);
   useFrame(({ clock }, dt) => {
-    if (!group.current) return;
+    if (!group.current) {return;}
+
     group.current.position.lerp(position.current, 1 - Math.exp(-dt * 22));
     group.current.rotation.z =
       -0.65 + (working && tool !== "curing" ? Math.sin(clock.elapsedTime * 60) * 0.018 : 0);
@@ -148,11 +152,12 @@ function TreatmentParticles({
   const ref = useRef<THREE.InstancedMesh>(null);
   const dummy = useMemo(() => new THREE.Object3D(), []);
   useFrame(({ clock }) => {
-    if (!ref.current) return;
+    if (!ref.current) {return;}
+
     ref.current.visible =
       working && active !== null && (tool === "polisher" || tool === "excavator");
 
-    if (!ref.current.visible) return;
+    if (!ref.current.visible) {return;}
 
     for (let i = 0; i < 16; i++) {
       const life = (clock.elapsedTime * 1.8 + i / 16) % 1;
@@ -197,7 +202,8 @@ class AssetBoundary extends Component<{ children: ReactNode }, { failed: boolean
 function CameraReset({ resetKey, mode }: { resetKey: number; mode: ViewMode }) {
   const { camera, controls, size } = useThree();
   useEffect(() => {
-    if (mode !== "treatment") return;
+    if (mode !== "treatment") {return;}
+
     const fit = Math.max(1, 0.95 / (size.width / size.height));
     camera.position.set(STATION.x, STATION.y + 0.32 * fit, STATION.z + 0.18 * fit);
     camera.lookAt(STATION.x, STATION.y + 0.015, STATION.z);
@@ -205,7 +211,7 @@ function CameraReset({ resetKey, mode }: { resetKey: number; mode: ViewMode }) {
     if (controls && "target" in controls && controls.target instanceof THREE.Vector3) {
       controls.target.set(STATION.x, STATION.y + 0.015, STATION.z);
 
-      if ("update" in controls && controls.update instanceof Function) controls.update();
+      if ("update" in controls && controls.update instanceof Function) {controls.update();}
     }
   }, [resetKey, mode, camera, controls, size.width, size.height]);
 
@@ -252,7 +258,8 @@ export function TreatmentScene({
     const local = e.point.clone().sub(STATION).divideScalar(MOUTH_SCALE);
     cursor.current.copy(local).add(new THREE.Vector3(0, 0.06, 0));
 
-    if (!session) return;
+    if (!session) {return;}
+
     let nearest: number | null = null;
     let distance = 0.52;
     patient.spots.forEach((spot, i) => {
@@ -265,7 +272,7 @@ export function TreatmentScene({
     });
     onTarget(nearest);
 
-    if (nearest === null) onHold(false);
+    if (nearest === null) {onHold(false);}
   }
 
   function aimSpot(index: number, spot: number) {
@@ -457,4 +464,4 @@ export function TreatmentScene({
 }
 
 for (const name of ["chair", "equipment", "patient", "dental-arch", "treatment-mouth"])
-  useGLTF.preload(`/models/${name}.glb`);
+  {useGLTF.preload(`/models/${name}.glb`);}

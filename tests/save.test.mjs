@@ -126,7 +126,7 @@ test("a complete clinic day banks each visit once, survives saves, and keeps the
     state = decodeSave(encode(duplicateTick)).appointment;
     state = advance(state, { type: "next" });
 
-    if (patient < patients.length - 1) assert.equal(state.dayScore, total);
+    if (patient < patients.length - 1) {assert.equal(state.dayScore, total);}
   }
 
   assert.equal(state.day, 2);

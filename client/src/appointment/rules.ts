@@ -103,9 +103,9 @@ export function canTreat(
   paused = state.paused,
 ) {
   if (!treating(state, paused) || state.cooldown || state.recovering || state.comfort <= 15)
-    return false;
+    {return false;}
 
-  if (tool !== steps[state.step]!.tool) return false;
+  if (tool !== steps[state.step]!.tool) {return false;}
 
   return (
     target !== null &&
@@ -139,28 +139,28 @@ export function advance(s: Appointment, a: Action): Appointment {
     a.type === "newDay" ||
     (a.type === "next" && s.step >= steps.length && s.patient === patients.length - 1)
   )
-    return { ...initial(), day: s.day + 1, stickers: s.stickers };
+    {return { ...initial(), day: s.day + 1, stickers: s.stickers };}
 
   if (a.type === "next")
-    return s.step >= steps.length
+    {return s.step >= steps.length
       ? { ...initial(s.patient + 1), day: s.day, dayScore: s.dayScore, stickers: s.stickers }
-      : s;
+      : s;}
 
   if (a.type === "restart")
-    return {
+    {return {
       ...initial(s.patient),
       day: s.day,
       dayScore: s.dayScore - (s.step >= steps.length ? s.score : 0),
       stickers: s.stickers,
-    };
+    };}
 
-  if (a.type === "start") return { ...s, started: true };
+  if (a.type === "start") {return { ...s, started: true };}
 
   if (a.type === "pause")
-    return s.started && s.step < steps.length ? { ...s, paused: !s.paused } : s;
+    {return s.started && s.step < steps.length ? { ...s, paused: !s.paused } : s;}
 
   if (a.type === "breathe")
-    return treating(s)
+    {return treating(s)
       ? {
           ...s,
           comfort: Math.min(100, s.comfort + 25),
@@ -168,11 +168,12 @@ export function advance(s: Appointment, a: Action): Appointment {
           cooldown: false,
           recovering: (s.recovering || s.comfort <= 15) && s.comfort + 25 < 35,
         }
-      : s;
+      : s;}
 
-  if (a.type !== "tick") return s;
+  if (a.type !== "tick") {return s;}
 
-  if (!treating(s)) return s;
+  if (!treating(s)) {return s;}
+
   const dt = Number.isFinite(a.dt) ? Math.max(0, Math.min(a.dt, 0.1)) : 0;
   const operating = canTreat(s, a.tool, a.target);
   const drilling = operating && a.tool === "excavator";
@@ -188,7 +189,7 @@ export function advance(s: Appointment, a: Action): Appointment {
   const progress = [...s.progress];
 
   if (operating && !cooldown && !recovering)
-    progress[a.target!] = Math.min(1, progress[a.target!]! + dt / steps[s.step]!.duration);
+    {progress[a.target!] = Math.min(1, progress[a.target!]! + dt / steps[s.step]!.duration);}
 
   if (progress.every((p) => p >= 1)) {
     const score = s.score + Math.round(comfort) + progress.length * 50;
