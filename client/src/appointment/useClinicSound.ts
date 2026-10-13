@@ -5,10 +5,10 @@ import type { Tool } from "./rules";
 export function useClinicSound(enabled: boolean, working: boolean, tool: Tool) {
   const context = useRef<AudioContext | null>(null);
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled) {return;}
 
     const unlock = () => {
-      if (typeof AudioContext === "undefined") return;
+      if (typeof AudioContext === "undefined") {return;}
 
       try {
         context.current ??= new AudioContext();
@@ -44,7 +44,8 @@ export function useClinicSound(enabled: boolean, working: boolean, tool: Tool) {
       tool === "mirror" ||
       tool === "composite"
     )
-      return;
+      {return;}
+
     const oscillator = c.createOscillator();
     const gain = c.createGain();
     oscillator.type = tool === "excavator" ? "triangle" : "sine";
@@ -68,7 +69,8 @@ export function useClinicSound(enabled: boolean, working: boolean, tool: Tool) {
   return useCallback(() => {
     const c = context.current;
 
-    if (!enabled || !c || c.state !== "running") return;
+    if (!enabled || !c || c.state !== "running") {return;}
+
     [660, 880].forEach((frequency, i) => {
       const oscillator = c.createOscillator();
       const gain = c.createGain();

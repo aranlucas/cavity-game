@@ -10,7 +10,7 @@ import {
 } from "../client/src/appointment/rules.ts";
 
 const tick = (s, tool, target = 0, n = 1) => {
-  for (let i = 0; i < n; i++) s = advance(s, { type: "tick", dt: 0.05, target, tool });
+  for (let i = 0; i < n; i++) {s = advance(s, { type: "tick", dt: 0.05, target, tool });}
 
   return s;
 };
@@ -58,7 +58,7 @@ test("all three appointments complete in sequence, with new cases reset", () => 
         while (s.step === stage && s.progress[spot] < 1 && guard++ < 300) {
           s = tick(s, steps[stage].tool, spot);
 
-          if (s.cooldown) s = tick(s, steps[stage].tool, null, 40);
+          if (s.cooldown) {s = tick(s, steps[stage].tool, null, 40);}
         }
 
         assert.ok(guard < 300, "treatment must make progress");

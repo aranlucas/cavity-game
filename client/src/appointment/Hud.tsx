@@ -95,8 +95,8 @@ export function ClinicHud({
   const dialog = useRef<HTMLDialogElement>(null);
   const [fullscreenError, setFullscreenError] = useState("");
   useEffect(() => {
-    if (menu) dialog.current?.showModal();
-    else dialog.current?.close();
+    if (menu) {dialog.current?.showModal();}
+    else {dialog.current?.close();}
   }, [menu]);
 
   return (
@@ -393,8 +393,9 @@ export function ClinicHud({
           className="secondary"
           onClick={async () => {
             try {
-              if (document.fullscreenElement) await document.exitFullscreen();
-              else await document.documentElement.requestFullscreen();
+              if (document.fullscreenElement) {await document.exitFullscreen();}
+              else {await document.documentElement.requestFullscreen();}
+
               setFullscreenError("");
             } catch {
               setFullscreenError("Fullscreen is unavailable in this browser.");
