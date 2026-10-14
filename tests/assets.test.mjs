@@ -1,19 +1,34 @@
 import test from "node:test";
+import { z } from "zod";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
+const assetDocument = z.object({
+  nodes: z.array(z.object({ name: z.string().optional() })),
+  buffers: z.array(z.object({ uri: z.string().optional() })).optional(),
+  images: z.array(z.object({ bufferView: z.number().optional() })).optional(),
+  materials: z.array(z.object({ name: z.string() })).default([]),
+});
+
+/** @param {string} name */
 function model(name) {
   const data = readFileSync(new URL(`../client/public/models/${name}.glb`, import.meta.url));
+
   assert.equal(data.toString("ascii", 0, 4), "glTF");
   assert.equal(data.readUInt32LE(4), 2);
   assert.equal(data.readUInt32LE(8), data.length);
   assert.ok(data.length < 2_000_000, `${name} exceeds the browser asset budget`);
-  const document = JSON.parse(data.toString("utf8", 20, 20 + data.readUInt32LE(12)));
+
+  const document = assetDocument.parse(
+    JSON.parse(data.toString("utf8", 20, 20 + data.readUInt32LE(12))),
+  );
+
   assert.ok(document.nodes.length > 0);
   assert.ok(
     (document.buffers ?? []).every((b) => !b.uri),
     "geometry must be packaged in GLB",
   );
+
   assert.ok(
     (document.images ?? []).every((i) => i.bufferView !== undefined),
     "textures must be packaged in GLB",
@@ -22,7 +37,7 @@ function model(name) {
   return document;
 }
 
-test("Blender exports ship as self-contained web assets", () => {
+await test("Blender exports ship as self-contained web assets", () => {
   for (const name of [
     "patient",
     "treatment-mouth",
@@ -33,26 +48,29 @@ test("Blender exports ship as self-contained web assets", () => {
     "excavator",
     "composite",
     "curing",
-  ])
-    {model(name);}
+  ]) {
+    model(name);
+  }
 });
 
-test("mouth keeps separate editable plaque, decay and filling inserts for all four target teeth", () => {
+await test("mouth keeps separate editable plaque, decay and filling inserts for all four target teeth", () => {
   const mouth = model("treatment-mouth");
   const names = new Set(mouth.nodes.map((n) => n.name));
 
   for (let target = 0; target < 4; target++) {
-    for (const kind of ["plaque", "decay", "filling"])
-      {assert.ok(names.has(`${kind}_${target}`), `missing ${kind}_${target}`);}
+    for (const kind of ["plaque", "decay", "filling"]) {
+      assert.ok(names.has(`${kind}_${target}`), `missing ${kind}_${target}`);
+    }
   }
 });
 
-test("patient retains materials for three patient appearance variants", () => {
+await test("patient retains materials for three patient appearance variants", () => {
   const names = model("patient").materials.map((m) => m.name);
 
-  for (const name of ["Patient skin", "Patient shirt", "Patient hair"])
-    {assert.ok(
+  for (const name of ["Patient skin", "Patient shirt", "Patient hair"]) {
+    assert.ok(
       names.some((n) => n.startsWith(name)),
       `missing ${name}`,
-    );}
+    );
+  }
 });

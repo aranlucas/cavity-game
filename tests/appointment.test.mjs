@@ -9,13 +9,20 @@ import {
   treating,
 } from "../client/src/appointment/rules.ts";
 
+/**
+ * @param {import("../client/src/appointment/rules.ts").Appointment} s
+ * @param {import("../client/src/appointment/rules.ts").Tool} tool
+ * @param {number | null} target
+ */
 const tick = (s, tool, target = 0, n = 1) => {
-  for (let i = 0; i < n; i++) {s = advance(s, { type: "tick", dt: 0.05, target, tool });}
+  for (let i = 0; i < n; i++) {
+    s = advance(s, { type: "tick", dt: 0.05, target, tool });
+  }
 
   return s;
 };
 
-test("not started, paused, wrong tool and invalid targets cannot advance treatment", () => {
+await test("not started, paused, wrong tool and invalid targets cannot advance treatment", () => {
   let s = initial();
   assert.deepEqual(tick(s, "mirror", 0, 30), s);
   s = advance(s, { type: "start" });
@@ -25,7 +32,7 @@ test("not started, paused, wrong tool and invalid targets cannot advance treatme
   assert.deepEqual(tick(s, "mirror", 0, 30), s);
 });
 
-test("bur overheats, locks treatment, and recovers after release", () => {
+await test("bur overheats, locks treatment, and recovers after release", () => {
   let s = { ...initial(), started: true, step: 2 };
   s = tick(s, "excavator", 0, 50);
   assert.equal(s.cooldown, true);
@@ -37,7 +44,7 @@ test("bur overheats, locks treatment, and recovers after release", () => {
   assert.equal(s.heat, 0);
 });
 
-test("breathing restores comfort and clears heat without changing treatment progress", () => {
+await test("breathing restores comfort and clears heat without changing treatment progress", () => {
   let s = { ...initial(), started: true, comfort: 30, heat: 85 };
   const p = [...s.progress];
   s = advance(s, { type: "breathe" });
@@ -47,18 +54,18 @@ test("breathing restores comfort and clears heat without changing treatment prog
   assert.equal("breaks" in s, false);
 });
 
-test("all three appointments complete in sequence, with new cases reset", () => {
+await test("all three appointments complete in sequence, with new cases reset", () => {
   for (let patient = 0; patient < patients.length; patient++) {
     let s = advance(initial(patient), { type: "start" });
 
-    for (let stage = 0; stage < steps.length; stage++) {
+    for (const [stage, step] of steps.entries()) {
       for (let spot = 0; spot < s.progress.length; spot++) {
         let guard = 0;
 
-        while (s.step === stage && s.progress[spot] < 1 && guard++ < 300) {
-          s = tick(s, steps[stage].tool, spot);
+        while (s.step === stage && (s.progress[spot] ?? 1) < 1 && guard++ < 300) {
+          s = tick(s, step.tool, spot);
 
-          if (s.cooldown) {s = tick(s, steps[stage].tool, null, 40);}
+          s = s.cooldown ? tick(s, step.tool, null, 40) : s;
         }
 
         assert.ok(guard < 300, "treatment must make progress");
@@ -77,16 +84,16 @@ test("all three appointments complete in sequence, with new cases reset", () => 
   }
 });
 
-test("large frame delays are clamped and low comfort requires a break", () => {
+await test("large frame delays are clamped and low comfort requires a break", () => {
   let s = { ...initial(), started: true, comfort: 0 };
   s = advance(s, { type: "tick", dt: 100, target: 0, tool: "mirror" });
   assert.equal(s.progress[0], 0);
   s = advance(s, { type: "breathe" });
   s = advance(s, { type: "tick", dt: 100, target: 0, tool: "mirror" });
-  assert.ok(s.progress[0] < 0.2);
+  assert.ok(s.progress[0] !== undefined && s.progress[0] < 0.2);
 });
 
-test("treating and canTreat are the single live-work gates", () => {
+await test("treating and canTreat are the single live-work gates", () => {
   const s = { ...initial(), started: true };
   assert.equal(treating(s), true);
   assert.equal(treating(s, true), false);
