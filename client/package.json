@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "portless run --name cavity-game vite",
     "build": "tsc -b && cf deploy --dry-run",
-    "deploy": "tsc -b && cf deploy"
+    "deploy": "tsc -b && cf deploy",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "format": "oxfmt --write",
+    "format:check": "oxfmt --check"
   },
   "dependencies": {
     "@react-three/drei": "10.7.9",
