@@ -13,7 +13,7 @@ export function ClinicCamera({ mode, paused, pad, resetKey, onNear, onEnter }: C
   const keys = useRef(new Set<string>());
   const look = useRef({ yaw: 0, pitch: -0.07, drag: false, x: 0, y: 0 });
   const near = useRef(false);
-  useEffect((): void | (() => void) => {
+  useEffect(() => {
     if (mode !== "room") {
       return;
     }
@@ -23,7 +23,7 @@ export function ClinicCamera({ mode, paused, pad, resetKey, onNear, onEnter }: C
     look.current.pitch = -0.16;
     camera.rotation.set(look.current.pitch, look.current.yaw, 0, "YXZ");
   }, [mode, resetKey, camera]);
-  useEffect((): void | (() => void) => {
+  useEffect(() => {
     const clear = () => {
       keys.current.clear();
       look.current.drag = false;
@@ -266,7 +266,7 @@ export function ClinicRoom({ patient, mode, onEnter }: ClinicRoomProps) {
     return target;
   }, []);
 
-  useEffect((): void | (() => void) => {
+  useEffect(() => {
     equipment.scene.traverse((object) => {
       if (object instanceof THREE.Mesh) {
         object.castShadow = true;

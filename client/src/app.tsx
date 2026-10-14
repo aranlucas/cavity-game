@@ -33,7 +33,7 @@ export default function App() {
   const chime = useClinicSound(sound, treatingNow, tool);
   const previousStep = useRef(state.step);
   const saveSnapshot = useRef({ state, sound });
-  useEffect((): void | (() => void) => {
+  useEffect(() => {
     saveSnapshot.current = { state, sound };
 
     if (state.step > previousStep.current) {
@@ -42,7 +42,7 @@ export default function App() {
 
     previousStep.current = state.step;
   }, [state, sound, chime]);
-  useEffect((): void | (() => void) => {
+  useEffect(() => {
     const persist = () => {
       const snapshot = saveSnapshot.current;
       setSaveAvailable(saveGame(snapshot.state, snapshot.sound));
@@ -66,7 +66,7 @@ export default function App() {
     };
   }, []);
   const live = useRef({ target, held, tool, seated });
-  useEffect((): void | (() => void) => {
+  useEffect(() => {
     live.current = { target, held, tool, seated };
   }, [target, held, tool, seated]);
   const onReady = useCallback(() => setReady(true), []);
@@ -99,7 +99,7 @@ export default function App() {
     setMenu(open);
   };
 
-  useEffect((): void | (() => void) => {
+  useEffect(() => {
     let last = performance.now();
 
     const timer = setInterval(() => {
@@ -120,12 +120,12 @@ export default function App() {
 
     return () => clearInterval(timer);
   }, []);
-  useEffect((): void | (() => void) => {
+  useEffect(() => {
     // oxlint-disable-next-line react/set-state-in-effect -- reset the external input latch at phase boundaries
     setHeld(false);
     setTarget(null);
   }, [state.step, state.patient, seated]);
-  useEffect((): void | (() => void) => {
+  useEffect(() => {
     const hidden = () => {
       release();
 
@@ -175,7 +175,7 @@ export default function App() {
       document.removeEventListener("visibilitychange", hidden);
     };
   }, []);
-  useEffect((): void | (() => void) => {
+  useEffect(() => {
     if (!breathing || menu || view === "room") {
       return;
     }

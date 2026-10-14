@@ -4,7 +4,7 @@ import type { Tool } from "./rules";
 /** Quiet, locally synthesized feedback. Browsers unlock audio on the first gesture. */
 export function useClinicSound(enabled: boolean, working: boolean, tool: Tool) {
   const context = useRef<AudioContext | null>(null);
-  useEffect((): void | (() => void) => {
+  useEffect(() => {
     if (!enabled) {
       return;
     }
@@ -37,7 +37,7 @@ export function useClinicSound(enabled: boolean, working: boolean, tool: Tool) {
     },
     [],
   );
-  useEffect((): void | (() => void) => {
+  useEffect(() => {
     const c = context.current;
 
     if (

@@ -23,5 +23,13 @@
     "**/.pi/**",
     "**/.roo/**",
     "**/.windsurf/**"
+  ],
+  "overrides": [
+    {
+      "files": ["src/app.tsx", "src/appointment/clinic.tsx", "src/appointment/use-clinic-sound.ts"],
+      "rules": {
+        "typescript/consistent-return": "off"
+      }
+    }
   ]
 }
