@@ -36,7 +36,9 @@ export default function App() {
   useEffect(() => {
     saveSnapshot.current = { state, sound };
 
-    if (state.step > previousStep.current) {chime();}
+    if (state.step > previousStep.current) {
+      chime();
+    }
 
     previousStep.current = state.step;
   }, [state, sound, chime]);
@@ -49,7 +51,9 @@ export default function App() {
     const timer = window.setInterval(persist, 1000);
 
     const hidden = () => {
-      if (document.hidden) {persist();}
+      if (document.hidden) {
+        persist();
+      }
     };
 
     window.addEventListener("pagehide", persist);
@@ -68,7 +72,9 @@ export default function App() {
   const onReady = useCallback(() => setReady(true), []);
 
   const enter = useCallback(() => {
-    if (!ready || !near || paused) {return;}
+    if (!ready || !near || paused) {
+      return;
+    }
 
     setHeld(false);
     setTarget(null);
@@ -86,7 +92,9 @@ export default function App() {
   const release = () => setHeld(false);
 
   const setMenuOpen = (open: boolean) => {
-    if (open) {release();}
+    if (open) {
+      release();
+    }
 
     setMenu(open);
   };
@@ -96,15 +104,16 @@ export default function App() {
 
     const timer = setInterval(() => {
       const now = performance.now();
-        const s = live.current;
+      const s = live.current;
 
-      if (s.seated)
-        {dispatch({
+      if (s.seated) {
+        dispatch({
           type: "tick",
           dt: (now - last) / 1000,
           target: s.held ? s.target : null,
           tool: s.tool,
-        });}
+        });
+      }
 
       last = now;
     }, 50);
@@ -120,7 +129,9 @@ export default function App() {
     const hidden = () => {
       release();
 
-      if (document.hidden) {setMenu(true);}
+      if (document.hidden) {
+        setMenu(true);
+      }
     };
 
     const key = (e: KeyboardEvent) => {
@@ -130,7 +141,9 @@ export default function App() {
         release();
       }
 
-      if (e.target instanceof HTMLElement && e.target.closest("dialog,input")) {return;}
+      if (e.target instanceof HTMLElement && e.target.closest("dialog,input")) {
+        return;
+      }
 
       const n = Number(e.key);
 
@@ -161,7 +174,9 @@ export default function App() {
     };
   }, []);
   useEffect(() => {
-    if (!breathing || menu || view === "room") {return;}
+    if (!breathing || menu || view === "room") {
+      return;
+    }
 
     const started = performance.now();
 

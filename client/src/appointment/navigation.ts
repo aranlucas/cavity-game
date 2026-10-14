@@ -31,9 +31,13 @@ export function walk(
   const dx = (-Math.sin(yaw) * forward + Math.cos(yaw) * right) * speed;
   const dz = (-Math.cos(yaw) * forward - Math.sin(yaw) * right) * speed;
 
-  if (canStand(x + dx, z)) {x += dx;}
+  if (canStand(x + dx, z)) {
+    x += dx;
+  }
 
-  if (canStand(x, z + dz)) {z += dz;}
+  if (canStand(x, z + dz)) {
+    z += dz;
+  }
 
   return { x, z };
 }

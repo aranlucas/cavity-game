@@ -50,30 +50,40 @@ const savedGameSchema = z.object({
 
 /** Treat browser storage as untrusted input; an old or broken save starts a fresh clinic. */
 export function decodeSave(raw: string | null): SavedGame | null {
-  if (!raw || raw.length > 10_000) {return null;}
+  if (!raw || raw.length > 10_000) {
+    return null;
+  }
 
   try {
     const decoded = savedGameSchema.safeParse(JSON.parse(raw));
 
-    if (!decoded.success) {return null;}
+    if (!decoded.success) {
+      return null;
+    }
 
     const record = decoded.data;
     const s = record.appointment;
     const patient = patients[s.patient]!;
     const maxScore = steps.length * (100 + patient.spots.length * 50);
 
-    if (s.score > maxScore || s.progress.length !== patient.spots.length) {return null;}
+    if (s.score > maxScore || s.progress.length !== patient.spots.length) {
+      return null;
+    }
 
-    if (new Set(s.stickers).size !== s.stickers.length) {return null;}
+    if (new Set(s.stickers).size !== s.stickers.length) {
+      return null;
+    }
 
-    if (!s.started && (s.step !== 0 || s.score !== 0 || s.progress.some((v) => v !== 0)))
-      {return null;}
+    if (!s.started && (s.step !== 0 || s.score !== 0 || s.progress.some((v) => v !== 0))) {
+      return null;
+    }
 
     if (
       s.step === steps.length &&
       (s.dayScore < s.score || s.progress.some((v) => v !== 0) || !s.stickers.includes(s.patient))
-    )
-      {return null;}
+    ) {
+      return null;
+    }
 
     return {
       version: 1,
