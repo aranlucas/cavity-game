@@ -11,26 +11,29 @@ import {
   type MutableRefObject,
 } from "react";
 import * as THREE from "three";
-import { patients, steps, canTreat, treating, type Appointment, type Tool } from "./rules";
-import { ClinicCamera, ClinicRoom, STATION, type MovementPad, type ViewMode } from "./Clinic";
+import { getPatient, steps, canTreat, treating, type Appointment, type Tool } from "./rules";
+import { ClinicCamera, ClinicRoom } from "./clinic";
+import { STATION, type MovementPad, type ViewMode } from "./clinic-state";
 import { surfaceState } from "./surface";
+import { isMesh } from "./meshes";
+import { setControlsTarget } from "./camera-controls";
 
 const MOUTH_SCALE = 0.045;
 
-const locations: [number, number, number][] = [
+const locations: Coordinates[] = [
   [-1.46, 0.59, -0.43],
   [1.46, 0.59, -0.43],
   [-1.46, 0.59, 0.43],
   [1.46, 0.59, 0.43],
 ];
 
-function Asset({ url }: { url: string }) {
+function Asset({ url }: AssetProps) {
   const { scene } = useGLTF(url);
 
   const copy = useMemo(() => {
     const c = scene.clone(true);
     c.traverse((o) => {
-      if (o instanceof THREE.Mesh) {
+      if (isMesh(o)) {
         o.castShadow = true;
         o.receiveShadow = true;
       }
@@ -42,13 +45,13 @@ function Asset({ url }: { url: string }) {
   return <primitive object={copy} />;
 }
 
-function Mouth({ state, onLoaded }: { state: Appointment; onLoaded: () => void }) {
+function Mouth({ state, onLoaded }: MouthProps) {
   const { scene } = useGLTF("/models/treatment-mouth.glb");
 
   const { copy, originalScales } = useMemo(() => {
     const c = scene.clone(true);
     c.traverse((o) => {
-      if (o instanceof THREE.Mesh && o.name.startsWith("filling_")) {
+      if (isMesh(o) && o.name.startsWith("filling_")) {
         o.material = Array.isArray(o.material)
           ? o.material.map((m) => m.clone())
           : o.material.clone();
@@ -61,8 +64,10 @@ function Mouth({ state, onLoaded }: { state: Appointment; onLoaded: () => void }
   useEffect(
     () => () =>
       copy.traverse((o) => {
-        if (o instanceof THREE.Mesh && o.name.startsWith("filling_")) {
-          (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => m.dispose());
+        if (isMesh(o) && o.name.startsWith("filling_")) {
+          for (const material of Array.isArray(o.material) ? o.material : [o.material]) {
+            material.dispose();
+          }
         }
       }),
     [copy],
@@ -72,7 +77,7 @@ function Mouth({ state, onLoaded }: { state: Appointment; onLoaded: () => void }
   }, [copy, onLoaded]);
   useEffect(() => {
     copy.traverse((o) => {
-      if (!(o instanceof THREE.Mesh)) {
+      if (!isMesh(o)) {
         return;
       }
 
@@ -84,7 +89,7 @@ function Mouth({ state, onLoaded }: { state: Appointment; onLoaded: () => void }
       }
 
       const spot = Number(match[2]);
-      const index = patients[state.patient]!.spots.indexOf(spot);
+      const index = getPatient(state.patient).spots.indexOf(spot);
       const visual = surfaceState(state.step, state.progress[index] ?? 0, index >= 0);
       const layer = match[1];
 
@@ -103,12 +108,13 @@ function Mouth({ state, onLoaded }: { state: Appointment; onLoaded: () => void }
       // The authoring origins are the centers of each local repair insert.
       if (match[1] === "filling") {
         o.scale.multiplyScalar(0.65 + 0.35 * amount);
-        (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => {
-          if (m instanceof THREE.MeshStandardMaterial) {
-            m.color.set(visual.cured ? "#f2ebd3" : "#d8d6bc");
-            m.roughness = visual.cured ? 0.22 : 0.6;
+
+        for (const material of Array.isArray(o.material) ? o.material : [o.material]) {
+          if (material instanceof THREE.MeshStandardMaterial) {
+            material.color.set(visual.cured ? "#f2ebd3" : "#d8d6bc");
+            material.roughness = visual.cured ? 0.22 : 0.6;
           }
-        });
+        }
       } else {
         o.scale.multiplyScalar(Math.max(0.001, Math.sqrt(amount)));
       }
@@ -118,15 +124,7 @@ function Mouth({ state, onLoaded }: { state: Appointment; onLoaded: () => void }
   return <primitive object={copy} />;
 }
 
-function Instrument({
-  tool,
-  position,
-  working,
-}: {
-  tool: Tool;
-  position: MutableRefObject<THREE.Vector3>;
-  working: boolean;
-}) {
+function Instrument({ tool, position, working }: InstrumentProps) {
   const group = useRef<THREE.Group>(null);
   useFrame(({ clock }, dt) => {
     if (!group.current) {
@@ -150,15 +148,7 @@ function Instrument({
   );
 }
 
-function TreatmentParticles({
-  active,
-  working,
-  tool,
-}: {
-  active: number | null;
-  working: boolean;
-  tool: Tool;
-}) {
+function TreatmentParticles({ active, working, tool }: TreatmentParticlesProps) {
   const ref = useRef<THREE.InstancedMesh>(null);
   const dummy = useMemo(() => new THREE.Object3D(), []);
   useFrame(({ clock }) => {
@@ -197,7 +187,7 @@ function TreatmentParticles({
   );
 }
 
-class AssetBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+class AssetBoundary extends Component<AssetBoundaryProps, AssetBoundaryState> {
   state = { failed: false };
   static getDerivedStateFromError() {
     return { failed: true };
@@ -216,7 +206,7 @@ class AssetBoundary extends Component<{ children: ReactNode }, { failed: boolean
   }
 }
 
-function CameraReset({ resetKey, mode }: { resetKey: number; mode: ViewMode }) {
+function CameraReset({ resetKey, mode }: CameraResetProps) {
   const { camera, controls, size } = useThree();
   useEffect(() => {
     if (mode !== "treatment") {
@@ -227,13 +217,7 @@ function CameraReset({ resetKey, mode }: { resetKey: number; mode: ViewMode }) {
     camera.position.set(STATION.x, STATION.y + 0.32 * fit, STATION.z + 0.18 * fit);
     camera.lookAt(STATION.x, STATION.y + 0.015, STATION.z);
 
-    if (controls && "target" in controls && controls.target instanceof THREE.Vector3) {
-      controls.target.set(STATION.x, STATION.y + 0.015, STATION.z);
-
-      if ("update" in controls && controls.update instanceof Function) {
-        controls.update();
-      }
-    }
+    setControlsTarget(controls, STATION.x, STATION.y + 0.015, STATION.z);
   }, [resetKey, mode, camera, controls, size.width, size.height]);
 
   return null;
@@ -253,23 +237,9 @@ export function TreatmentScene({
   pad,
   onNear,
   onEnter,
-}: {
-  state: Appointment;
-  paused: boolean;
-  tool: Tool;
-  active: number | null;
-  working: boolean;
-  onTarget: (target: number | null) => void;
-  onHold: (value: boolean) => void;
-  onReady: () => void;
-  resetKey: number;
-  mode: ViewMode;
-  pad: MutableRefObject<MovementPad>;
-  onNear: (v: boolean) => void;
-  onEnter: () => void;
-}) {
+}: TreatmentSceneProps) {
   const cursor = useRef(new THREE.Vector3(3, 3, 1));
-  const patient = patients[state.patient]!;
+  const patient = getPatient(state.patient);
   const session = mode === "treatment" && treating(state, paused);
   const effective = canTreat(state, tool, working ? active : null, paused);
 
@@ -285,14 +255,16 @@ export function TreatmentScene({
 
     let nearest: number | null = null;
     let distance = 0.52;
-    patient.spots.forEach((spot, i) => {
-      const d = new THREE.Vector3(...locations[spot]!).distanceTo(local);
 
-      if (d < distance && state.progress[i]! < 1) {
+    for (const [i, spot] of patient.spots.entries()) {
+      const d = new THREE.Vector3(...locationAt(spot)).distanceTo(local);
+
+      if (d < distance && (state.progress[i] ?? 1) < 1) {
         nearest = i;
         distance = d;
       }
-    });
+    }
+
     onTarget(nearest);
 
     if (nearest === null) {
@@ -302,7 +274,7 @@ export function TreatmentScene({
 
   function aimSpot(index: number, spot: number) {
     onTarget(index);
-    cursor.current.set(...locations[spot]!);
+    cursor.current.set(...locationAt(spot));
     cursor.current.y += 0.05;
   }
 
@@ -377,10 +349,10 @@ export function TreatmentScene({
             {mode === "treatment" &&
               state.step < steps.length &&
               patient.spots.map((spot, i) => {
-                const p = state.progress[i] || 0;
+                const p = state.progress[i] ?? 0;
                 const done = p >= 1;
 
-                const progressStyle: CSSProperties & { "--progress": string } = {
+                const progressStyle: CSSProperties & ProgressStyleProperties = {
                   "--progress": `${p * 100}%`,
                 };
 
@@ -491,4 +463,56 @@ export function TreatmentScene({
 
 for (const name of ["chair", "equipment", "patient", "dental-arch", "treatment-mouth"]) {
   useGLTF.preload(`/models/${name}.glb`);
+}
+
+type Coordinates = [number, number, number];
+
+type AssetProps = { url: string };
+
+type MouthProps = { state: Appointment; onLoaded: () => void };
+
+type InstrumentProps = {
+  tool: Tool;
+  position: MutableRefObject<THREE.Vector3>;
+  working: boolean;
+};
+
+type TreatmentParticlesProps = {
+  active: number | null;
+  working: boolean;
+  tool: Tool;
+};
+
+type AssetBoundaryProps = { children: ReactNode };
+
+type AssetBoundaryState = { failed: boolean };
+
+type CameraResetProps = { resetKey: number; mode: ViewMode };
+
+type TreatmentSceneProps = {
+  state: Appointment;
+  paused: boolean;
+  tool: Tool;
+  active: number | null;
+  working: boolean;
+  onTarget: (target: number | null) => void;
+  onHold: (value: boolean) => void;
+  onReady: () => void;
+  resetKey: number;
+  mode: ViewMode;
+  pad: MutableRefObject<MovementPad>;
+  onNear: (v: boolean) => void;
+  onEnter: () => void;
+};
+
+type ProgressStyleProperties = { "--progress": string };
+
+function locationAt(spot: number): Coordinates {
+  const location = locations[spot];
+
+  if (!location) {
+    throw new RangeError(`Unknown treatment spot: ${spot}`);
+  }
+
+  return location;
 }

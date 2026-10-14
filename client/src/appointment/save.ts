@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { patients, steps, type Appointment } from "./rules.ts";
+import { getPatient, patients, steps, type Appointment } from "./rules.ts";
 
 export const SAVE_KEY = "little-smiles:clinic:v1";
 
@@ -63,7 +63,7 @@ export function decodeSave(raw: string | null): SavedGame | null {
 
     const record = decoded.data;
     const s = record.appointment;
-    const patient = patients[s.patient]!;
+    const patient = getPatient(s.patient);
     const maxScore = steps.length * (100 + patient.spots.length * 50);
 
     if (s.score > maxScore || s.progress.length !== patient.spots.length) {

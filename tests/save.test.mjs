@@ -1,4 +1,4 @@
-import test from "node:test";
+import { test } from "vitest";
 import assert from "node:assert/strict";
 import { advance, initial, patients, steps } from "../client/src/appointment/rules.ts";
 import { SAVE_KEY, decodeSave, loadGame, saveGame } from "../client/src/appointment/save.ts";
@@ -22,7 +22,7 @@ const complete = (appointment) => {
   return state;
 };
 
-await test("saved treatment retains tooth progress, heat, day points and settings, then resumes unpaused", () => {
+test("saved treatment retains tooth progress, heat, day points and settings, then resumes unpaused", () => {
   const state = {
     ...initial(1),
     started: true,
@@ -44,7 +44,7 @@ await test("saved treatment retains tooth progress, heat, day points and setting
   assert.equal(decoded.sound, false);
 });
 
-await test("invalid, incompatible or impossible saves are rejected without crashing", () => {
+test("invalid, incompatible or impossible saves are rejected without crashing", () => {
   const invalid = [
     null,
     "",
@@ -81,7 +81,7 @@ await test("invalid, incompatible or impossible saves are rejected without crash
   }
 });
 
-await test("legacy interest and breaks fields are ignored so old saves still load", () => {
+test("legacy interest and breaks fields are ignored so old saves still load", () => {
   const leftover = {
     ...initial(),
     breaks: 7,
@@ -103,7 +103,7 @@ await test("legacy interest and breaks fields are ignored so old saves still loa
   assert.deepEqual(garbageBreaks.appointment, initial());
 });
 
-await test("storage failures are harmless, and successful writes can be loaded", () => {
+test("storage failures are harmless, and successful writes can be loaded", () => {
   /** @type {Map<string, string>} */
   const records = new Map();
 
@@ -134,7 +134,7 @@ await test("storage failures are harmless, and successful writes can be loaded",
   assert.equal(saveGame(initial(), false, unavailable), false);
 });
 
-await test("a complete clinic day banks each visit once, survives saves, and keeps the sticker album", () => {
+test("a complete clinic day banks each visit once, survives saves, and keeps the sticker album", () => {
   let state = initial();
   let total = 0;
 
@@ -171,7 +171,7 @@ await test("a complete clinic day banks each visit once, survives saves, and kee
   assert.deepEqual(state.stickers, [0, 1, 2]);
 });
 
-await test("restart replaces the current visit score and next cannot skip unfinished patients", () => {
+test("restart replaces the current visit score and next cannot skip unfinished patients", () => {
   const first = complete(initial());
   const second = complete(advance(first, { type: "next" }));
   const restarted = advance(second, { type: "restart" });
@@ -184,7 +184,7 @@ await test("restart replaces the current visit score and next cannot skip unfini
   assert.equal(complete(restarted).dayScore, second.dayScore);
 });
 
-await test("comfort recovery blocks held instruments until reassurance restores the safety margin", () => {
+test("comfort recovery blocks held instruments until reassurance restores the safety margin", () => {
   let state = { ...initial(), started: true, comfort: 0 };
   state = advance(state, { type: "tick", dt: 0.1, target: 0, tool: "mirror" });
   assert.equal(state.recovering, true);
@@ -201,7 +201,7 @@ await test("comfort recovery blocks held instruments until reassurance restores 
   assert.ok(resumed.progress[0] !== undefined && resumed.progress[0] > 0);
 });
 
-await test("nonfinite deltas and fractional targets cannot poison an appointment", () => {
+test("nonfinite deltas and fractional targets cannot poison an appointment", () => {
   const state = { ...initial(), started: true };
 
   assert.deepEqual(advance(state, { type: "tick", dt: NaN, target: 0, tool: "mirror" }), state);
@@ -216,7 +216,7 @@ await test("nonfinite deltas and fractional targets cannot poison an appointment
   );
 });
 
-await test("save boundary rejects wrong primitive types without coercion", () => {
+test("save boundary rejects wrong primitive types without coercion", () => {
   for (const field of ["patient", "step", "day", "dayScore", "score", "comfort", "heat"]) {
     for (const value of ["0", null, false, {}, [], 1e100]) {
       assert.equal(
@@ -248,7 +248,7 @@ await test("save boundary rejects wrong primitive types without coercion", () =>
   }
 });
 
-await test("saved arrays reject fractional identifiers and nonnumeric progress", () => {
+test("saved arrays reject fractional identifiers and nonnumeric progress", () => {
   for (const progress of [
     ["0", 0],
     [false, 0],

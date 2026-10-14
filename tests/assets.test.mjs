@@ -1,4 +1,4 @@
-import test from "node:test";
+import { test } from "vitest";
 import { z } from "zod";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -23,7 +23,6 @@ function model(name) {
     JSON.parse(data.toString("utf8", 20, 20 + data.readUInt32LE(12))),
   );
 
-  assert.ok(document.nodes.length > 0);
   assert.ok(
     (document.buffers ?? []).every((b) => !b.uri),
     "geometry must be packaged in GLB",
@@ -37,7 +36,7 @@ function model(name) {
   return document;
 }
 
-await test("Blender exports ship as self-contained web assets", () => {
+test("Blender exports ship as self-contained web assets", () => {
   for (const name of [
     "patient",
     "treatment-mouth",
@@ -49,11 +48,12 @@ await test("Blender exports ship as self-contained web assets", () => {
     "composite",
     "curing",
   ]) {
-    model(name);
+    const document = model(name);
+    assert.ok(document.nodes.length > 0, `${name} must contain scene nodes`);
   }
 });
 
-await test("mouth keeps separate editable plaque, decay and filling inserts for all four target teeth", () => {
+test("mouth keeps separate editable plaque, decay and filling inserts for all four target teeth", () => {
   const mouth = model("treatment-mouth");
   const names = new Set(mouth.nodes.map((n) => n.name));
 
@@ -64,7 +64,7 @@ await test("mouth keeps separate editable plaque, decay and filling inserts for 
   }
 });
 
-await test("patient retains materials for three patient appearance variants", () => {
+test("patient retains materials for three patient appearance variants", () => {
   const names = model("patient").materials.map((m) => m.name);
 
   for (const name of ["Patient skin", "Patient shirt", "Patient hair"]) {

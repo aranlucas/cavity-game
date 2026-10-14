@@ -1,14 +1,26 @@
 import { useEffect, useRef, useState, type MutableRefObject } from "react";
-import { type MovementPad, type MoveDir, type ViewMode } from "./Clinic";
-import { patients, steps, tools, type Appointment, type Tool } from "./rules";
+import { type MovementPad, type MoveDir, type ViewMode } from "./clinic-state";
+import { getPatient, getStep, patients, steps, tools, type Appointment, type Tool } from "./rules";
 
-const labels = ["Dental mirror", "Polisher", "Precision bur", "Composite", "Curing light"];
+const labels = {
+  mirror: "Dental mirror",
+  polisher: "Polisher",
+  excavator: "Precision bur",
+  composite: "Composite",
+  curing: "Curing light",
+} satisfies Record<Tool, string>;
 
-const compactLabels = ["Mirror", "Polish", "Repair", "Fill", "Cure"];
+const compactLabels = {
+  mirror: "Mirror",
+  polisher: "Polish",
+  excavator: "Repair",
+  composite: "Fill",
+  curing: "Cure",
+} satisfies Record<Tool, string>;
 
 const padOrder: MoveDir[] = ["forward", "left", "back", "right"];
 
-function ToolIcon({ index }: { index: number }) {
+function ToolIcon({ index }: ToolIconProps) {
   return (
     <svg
       viewBox="0 0 52 52"
@@ -59,30 +71,10 @@ export function ClinicHud({
   onSound,
   onResetCamera,
   onResetVisit,
-}: {
-  state: Appointment;
-  view: ViewMode;
-  tool: Tool;
-  paused: boolean;
-  menu: boolean;
-  breathing: boolean;
-  ready: boolean;
-  near: boolean;
-  sound: boolean;
-  saveAvailable: boolean;
-  pad: MutableRefObject<MovementPad>;
-  onTool: (tool: Tool) => void;
-  onMenu: (open: boolean) => void;
-  onReassure: () => void;
-  onEnter: () => void;
-  onLeave: () => void;
-  onSound: () => void;
-  onResetCamera: () => void;
-  onResetVisit: (type: "next" | "restart" | "newDay") => void;
-}) {
-  const patient = patients[state.patient]!;
+}: ClinicHudProps) {
+  const patient = getPatient(state.patient);
   const complete = state.step >= steps.length;
-  const step = steps[Math.min(state.step, steps.length - 1)]!;
+  const step = getStep(Math.min(state.step, steps.length - 1));
 
   const progress = complete
     ? 100
@@ -149,12 +141,18 @@ export function ClinicHud({
                   {step.verb.toLowerCase()}
                 </summary>
                 <ol>
-                  {state.progress.map((p, i) => (
-                    <li key={i}>
-                      <span>Tooth {i + 1}</span>
-                      <span>{p >= 1 ? "✓ Done" : `${Math.round(p * 100)}%`}</span>
-                    </li>
-                  ))}
+                  {patient.spots.map((spot, i) => {
+                    const toothProgress = state.progress[i] ?? 0;
+
+                    return (
+                      <li key={spot}>
+                        <span>Tooth {i + 1}</span>
+                        <span>
+                          {toothProgress >= 1 ? "✓ Done" : `${Math.round(toothProgress * 100)}%`}
+                        </span>
+                      </li>
+                    );
+                  })}
                 </ol>
               </details>
             )}
@@ -257,7 +255,7 @@ export function ClinicHud({
             {state.recovering || state.comfort <= 15
               ? `Tools are resting. Reassure ${patient.name} to restore comfort.`
               : tool !== step.tool
-                ? `Select ${labels[tools.indexOf(step.tool)]!.toLowerCase()}`
+                ? `Select ${labels[step.tool].toLowerCase()}`
                 : state.cooldown
                   ? "Release and let the bur cool"
                   : step.hint}
@@ -268,15 +266,15 @@ export function ClinicHud({
                 type="button"
                 key={t}
                 className={`tool ${tool === t ? "selected" : ""}`}
-                aria-label={labels[i]}
+                aria-label={labels[t]}
                 aria-pressed={tool === t}
                 onClick={() => onTool(t)}
               >
                 <kbd>{i + 1}</kbd>
                 <ToolIcon index={i} />
-                <span className="full-label">{labels[i]}</span>
+                <span className="full-label">{labels[t]}</span>
                 <span className="compact-label" aria-hidden="true">
-                  {compactLabels[i]}
+                  {compactLabels[t]}
                 </span>
                 {step.tool === t && <i />}
               </button>
@@ -404,15 +402,17 @@ export function ClinicHud({
         <button
           type="button"
           className="secondary"
-          onClick={async () => {
+          onClick={() => {
             try {
-              if (document.fullscreenElement) {
-                await document.exitFullscreen();
-              } else {
-                await document.documentElement.requestFullscreen();
-              }
+              const request = document.fullscreenElement
+                ? document.exitFullscreen()
+                : document.documentElement.requestFullscreen();
 
-              setFullscreenError("");
+              request
+                .then(() => setFullscreenError(""))
+                .catch(() => {
+                  setFullscreenError("Fullscreen is unavailable in this browser.");
+                });
             } catch {
               setFullscreenError("Fullscreen is unavailable in this browser.");
             }
@@ -467,3 +467,27 @@ export function ClinicHud({
     </>
   );
 }
+
+type ToolIconProps = { index: number };
+
+type ClinicHudProps = {
+  state: Appointment;
+  view: ViewMode;
+  tool: Tool;
+  paused: boolean;
+  menu: boolean;
+  breathing: boolean;
+  ready: boolean;
+  near: boolean;
+  sound: boolean;
+  saveAvailable: boolean;
+  pad: MutableRefObject<MovementPad>;
+  onTool: (tool: Tool) => void;
+  onMenu: (open: boolean) => void;
+  onReassure: () => void;
+  onEnter: () => void;
+  onLeave: () => void;
+  onSound: () => void;
+  onResetCamera: () => void;
+  onResetVisit: (type: "next" | "restart" | "newDay") => void;
+};

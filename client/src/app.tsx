@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
-import { TreatmentScene } from "./appointment/Scene";
-import { ClinicHud } from "./appointment/Hud";
+import { TreatmentScene } from "./appointment/scene";
+import { ClinicHud } from "./appointment/hud";
 import { advance, canTreat, initial, steps, tools, treating, type Tool } from "./appointment/rules";
-import { idlePad, type ViewMode } from "./appointment/Clinic";
+import { idlePad, type ViewMode } from "./appointment/clinic-state";
 import { loadGame, saveGame } from "./appointment/save";
-import { useClinicSound } from "./appointment/useClinicSound";
+import { useClinicSound } from "./appointment/use-clinic-sound";
 import "./appointment/hud.css";
 
 export default function App() {
@@ -33,7 +33,7 @@ export default function App() {
   const chime = useClinicSound(sound, treatingNow, tool);
   const previousStep = useRef(state.step);
   const saveSnapshot = useRef({ state, sound });
-  useEffect(() => {
+  useEffect((): void | (() => void) => {
     saveSnapshot.current = { state, sound };
 
     if (state.step > previousStep.current) {
@@ -42,7 +42,7 @@ export default function App() {
 
     previousStep.current = state.step;
   }, [state, sound, chime]);
-  useEffect(() => {
+  useEffect((): void | (() => void) => {
     const persist = () => {
       const snapshot = saveSnapshot.current;
       setSaveAvailable(saveGame(snapshot.state, snapshot.sound));
@@ -66,7 +66,7 @@ export default function App() {
     };
   }, []);
   const live = useRef({ target, held, tool, seated });
-  useEffect(() => {
+  useEffect((): void | (() => void) => {
     live.current = { target, held, tool, seated };
   }, [target, held, tool, seated]);
   const onReady = useCallback(() => setReady(true), []);
@@ -99,7 +99,7 @@ export default function App() {
     setMenu(open);
   };
 
-  useEffect(() => {
+  useEffect((): void | (() => void) => {
     let last = performance.now();
 
     const timer = setInterval(() => {
@@ -120,12 +120,12 @@ export default function App() {
 
     return () => clearInterval(timer);
   }, []);
-  useEffect(() => {
+  useEffect((): void | (() => void) => {
     // oxlint-disable-next-line react/set-state-in-effect -- reset the external input latch at phase boundaries
     setHeld(false);
     setTarget(null);
   }, [state.step, state.patient, seated]);
-  useEffect(() => {
+  useEffect((): void | (() => void) => {
     const hidden = () => {
       release();
 
@@ -147,8 +147,10 @@ export default function App() {
 
       const n = Number(e.key);
 
-      if (n >= 1 && n <= tools.length) {
-        setTool(tools[n - 1]!);
+      const selectedTool = tools[n - 1];
+
+      if (n >= 1 && n <= tools.length && selectedTool) {
+        setTool(selectedTool);
         release();
       }
 
@@ -173,7 +175,7 @@ export default function App() {
       document.removeEventListener("visibilitychange", hidden);
     };
   }, []);
-  useEffect(() => {
+  useEffect((): void | (() => void) => {
     if (!breathing || menu || view === "room") {
       return;
     }

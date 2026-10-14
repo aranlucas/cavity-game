@@ -3,40 +3,17 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { RoundedBox, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { walk } from "./navigation";
-import { patients } from "./rules";
+import { getPatient } from "./rules";
+import { isMesh } from "./meshes";
 
-export type ViewMode = "room" | "treatment";
+import { STATION, idlePad, type MovementPad, type ViewMode } from "./clinic-state";
 
-export type MoveDir = "forward" | "back" | "left" | "right";
-
-export type MovementPad = Record<MoveDir, boolean>;
-
-export const STATION = new THREE.Vector3(0, 1.792, -1.755);
-
-export function idlePad(): MovementPad {
-  return { forward: false, back: false, left: false, right: false };
-}
-
-export function ClinicCamera({
-  mode,
-  paused,
-  pad,
-  resetKey,
-  onNear,
-  onEnter,
-}: {
-  mode: ViewMode;
-  paused: boolean;
-  pad: MutableRefObject<MovementPad>;
-  resetKey: number;
-  onNear: (v: boolean) => void;
-  onEnter: () => void;
-}) {
+export function ClinicCamera({ mode, paused, pad, resetKey, onNear, onEnter }: ClinicCameraProps) {
   const { camera, gl } = useThree();
   const keys = useRef(new Set<string>());
   const look = useRef({ yaw: 0, pitch: -0.07, drag: false, x: 0, y: 0 });
   const near = useRef(false);
-  useEffect(() => {
+  useEffect((): void | (() => void) => {
     if (mode !== "room") {
       return;
     }
@@ -44,10 +21,9 @@ export function ClinicCamera({
     camera.position.set(2.7, 1.95, 3.8);
     look.current.yaw = 0.44;
     look.current.pitch = -0.16;
-    camera.rotation.order = "YXZ";
-    camera.rotation.set(look.current.pitch, look.current.yaw, 0);
+    camera.rotation.set(look.current.pitch, look.current.yaw, 0, "YXZ");
   }, [mode, resetKey, camera]);
-  useEffect(() => {
+  useEffect((): void | (() => void) => {
     const clear = () => {
       keys.current.clear();
       look.current.drag = false;
@@ -152,8 +128,7 @@ export function ClinicCamera({
       Number(k.has("KeyA") || k.has("ArrowLeft") || p.left);
 
     const next = walk(camera.position.x, camera.position.z, l.yaw, f, r, dt);
-    camera.position.x = next.x;
-    camera.position.z = next.z;
+    camera.position.set(next.x, camera.position.y, next.z);
     camera.rotation.set(l.pitch, l.yaw, 0);
     const close = Math.hypot(camera.position.x - STATION.x, camera.position.z - STATION.z) < 2.4;
 
@@ -166,19 +141,7 @@ export function ClinicCamera({
   return null;
 }
 
-function Box({
-  position,
-  size,
-  color,
-  radius = 0.06,
-  metal = 0,
-}: {
-  position: [number, number, number];
-  size: [number, number, number];
-  color: string;
-  radius?: number;
-  metal?: number;
-}) {
+function Box({ position, size, color, radius = 0.06, metal = 0 }: BoxProps) {
   return (
     <RoundedBox
       position={position}
@@ -193,7 +156,7 @@ function Box({
   );
 }
 
-function Plant({ position }: { position: [number, number, number] }) {
+function Plant({ position }: PlantProps) {
   return (
     <group position={position}>
       <mesh position={[0, 0.3, 0]} castShadow>
@@ -216,7 +179,7 @@ function Plant({ position }: { position: [number, number, number] }) {
   );
 }
 
-function Patient({ patient }: { patient: number }) {
+function Patient({ patient }: PatientProps) {
   const { scene } = useGLTF("/models/patient.glb");
 
   const copy = useMemo(() => {
@@ -224,23 +187,25 @@ function Patient({ patient }: { patient: number }) {
     const materials = new Map<THREE.Material, THREE.Material>();
 
     const customize = (source: THREE.Material) => {
-      if (materials.has(source)) {
-        return materials.get(source)!;
+      const existing = materials.get(source);
+
+      if (existing) {
+        return existing;
       }
 
       const m = source.clone();
 
       if (m instanceof THREE.MeshStandardMaterial) {
         if (m.name.startsWith("Patient skin")) {
-          m.color.set(patients[patient]!.color);
+          m.color.set(getPatient(patient).color);
         }
 
         if (m.name.startsWith("Patient shirt")) {
-          m.color.set(["#d6ad65", "#819aa8", "#c18e8a"][patient]!);
+          m.color.set(getPatient(patient).shirtColor);
         }
 
         if (m.name.startsWith("Patient hair")) {
-          m.color.set(["#503525", "#30281f", "#754b2f"][patient]!);
+          m.color.set(getPatient(patient).hairColor);
         }
 
         m.envMapIntensity = 0.5;
@@ -252,7 +217,7 @@ function Patient({ patient }: { patient: number }) {
     };
 
     c.traverse((o) => {
-      if (!(o instanceof THREE.Mesh)) {
+      if (!isMesh(o)) {
         return;
       }
 
@@ -269,11 +234,16 @@ function Patient({ patient }: { patient: number }) {
     () => () => {
       const materials = new Set<THREE.Material>();
       copy.traverse((o) => {
-        if (o instanceof THREE.Mesh) {
-          (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => materials.add(m));
+        if (isMesh(o)) {
+          for (const material of Array.isArray(o.material) ? o.material : [o.material]) {
+            materials.add(material);
+          }
         }
       });
-      materials.forEach((m) => m.dispose());
+
+      for (const material of materials) {
+        material.dispose();
+      }
     },
     [copy],
   );
@@ -285,15 +255,7 @@ function Patient({ patient }: { patient: number }) {
   );
 }
 
-export function ClinicRoom({
-  patient,
-  mode,
-  onEnter,
-}: {
-  patient: number;
-  mode: ViewMode;
-  onEnter: () => void;
-}) {
+export function ClinicRoom({ patient, mode, onEnter }: ClinicRoomProps) {
   const chair = useGLTF("/models/chair.glb");
   const equipment = useGLTF("/models/equipment.glb");
 
@@ -304,7 +266,7 @@ export function ClinicRoom({
     return target;
   }, []);
 
-  useEffect(() => {
+  useEffect((): void | (() => void) => {
     equipment.scene.traverse((object) => {
       if (object instanceof THREE.Mesh) {
         object.castShadow = true;
@@ -412,3 +374,32 @@ export function ClinicRoom({
     </group>
   );
 }
+
+type Coordinates = [number, number, number];
+
+type ClinicCameraProps = {
+  mode: ViewMode;
+  paused: boolean;
+  pad: MutableRefObject<MovementPad>;
+  resetKey: number;
+  onNear: (v: boolean) => void;
+  onEnter: () => void;
+};
+
+type BoxProps = {
+  position: Coordinates;
+  size: Coordinates;
+  color: string;
+  radius?: number;
+  metal?: number;
+};
+
+type PlantProps = { position: Coordinates };
+
+type PatientProps = { patient: number };
+
+type ClinicRoomProps = {
+  patient: number;
+  mode: ViewMode;
+  onEnter: () => void;
+};
