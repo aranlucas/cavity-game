@@ -7,7 +7,11 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "noEmit": true,
-    "types": ["node"]
+    "types": ["node"],
+    "paths": {
+      "@/*": ["./client/src/*"],
+      "@test/*": ["./test/*"]
+    }
   },
-  "include": ["tests/**/*.mjs", "oxfmt.config.ts", "vitest.config.mts", "test/**/*.mjs"]
+  "include": ["oxfmt.config.ts", "vitest.config.mts", "test/**/*.mjs"]
 }

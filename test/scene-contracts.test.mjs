@@ -10,9 +10,9 @@ import {
   PerspectiveCamera,
   Vector3,
 } from "three";
-import { setControlsTarget } from "../client/src/appointment/camera-controls.ts";
-import { isMesh } from "../client/src/appointment/meshes.ts";
-import { getPatient, getStep, patients, steps } from "../client/src/appointment/rules.ts";
+import { setControlsTarget } from "@/appointment/camera-controls.ts";
+import { isMesh } from "@/appointment/meshes.ts";
+import { getPatient, getStep, patients, steps } from "@/appointment/rules.ts";
 
 class OrbitFixture extends Controls {
   target = new Vector3();

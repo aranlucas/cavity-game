@@ -1,6 +1,6 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
-import { canStand, walk } from "../client/src/appointment/navigation.ts";
+import { canStand, walk } from "@/appointment/navigation.ts";
 
 test("room walls and furniture block walking, while the approach to the station is clear", () => {
   for (const { x, z } of [

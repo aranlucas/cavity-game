@@ -1,9 +1,9 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
-import { advance, initial, patients, steps } from "../client/src/appointment/rules.ts";
-import { SAVE_KEY, decodeSave, loadGame, saveGame } from "../client/src/appointment/save.ts";
+import { advance, initial, patients, steps } from "@/appointment/rules.ts";
+import { SAVE_KEY, decodeSave, loadGame, saveGame } from "@/appointment/save.ts";
 
-/** @param {import("../client/src/appointment/rules.ts").Appointment} appointment */
+/** @param {import("@/appointment/rules.ts").Appointment} appointment */
 const complete = (appointment) => {
   let state = advance(appointment, { type: "start" });
 

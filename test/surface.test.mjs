@@ -1,6 +1,6 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
-import { surfaceState } from "../client/src/appointment/surface.ts";
+import { surfaceState } from "@/appointment/surface.ts";
 
 test("tooth damage is removed before the filling grows into the modeled recess", () => {
   assert.deepEqual(surfaceState(0, 0, true), { plaque: 1, decay: 1, filling: 0, cured: false });
