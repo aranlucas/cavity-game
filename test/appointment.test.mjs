@@ -1,17 +1,10 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
-import {
-  advance,
-  canTreat,
-  initial,
-  steps,
-  patients,
-  treating,
-} from "../client/src/appointment/rules.ts";
+import { advance, canTreat, initial, steps, patients, treating } from "@/appointment/rules.ts";
 
 /**
- * @param {import("../client/src/appointment/rules.ts").Appointment} s
- * @param {import("../client/src/appointment/rules.ts").Tool} tool
+ * @param {import("@/appointment/rules.ts").Appointment} s
+ * @param {import("@/appointment/rules.ts").Tool} tool
  * @param {number | null} target
  */
 const tick = (s, tool, target = 0, n = 1) => {

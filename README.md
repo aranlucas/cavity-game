@@ -68,7 +68,7 @@ Both builders accept arguments after `--`: use `--output-dir /path/to/models` to
 - `client/src/appointment/surface.ts`: plaque, decay, and filling visibility and treatment progression.
 - `client/src/appointment/Scene.tsx`: GLB loading, scene lighting, instrument positioning, and treatment targets.
 - `client/src/appointment/useClinicSound.ts`: optional locally synthesized instrument sounds and completion chimes.
-- `tests/*.test.mjs`: gameplay, clinic-day progression, save, navigation, tooth-surface, and GLB regressions (Node 24, no test framework required).
+- `test/*.test.mjs`: gameplay, clinic-day progression, save, navigation, tooth-surface, and GLB regressions (Vitest on Node 24).
 
 ```bash
 npm test
