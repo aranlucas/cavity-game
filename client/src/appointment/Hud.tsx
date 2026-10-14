@@ -95,8 +95,11 @@ export function ClinicHud({
   const dialog = useRef<HTMLDialogElement>(null);
   const [fullscreenError, setFullscreenError] = useState("");
   useEffect(() => {
-    if (menu) {dialog.current?.showModal();}
-    else {dialog.current?.close();}
+    if (menu) {
+      dialog.current?.showModal();
+    } else {
+      dialog.current?.close();
+    }
   }, [menu]);
 
   return (
@@ -132,6 +135,7 @@ export function ClinicHud({
         {view === "treatment" && (
           <>
             <button
+              type="button"
               className={`breath-button ${state.recovering ? "needs-rest" : ""}`}
               disabled={complete || paused}
               onClick={onReassure}
@@ -159,11 +163,11 @@ export function ClinicHud({
       </aside>
       <div className="game-actions">
         {view === "treatment" && (
-          <button onClick={onLeave} title="Q — leave treatment">
+          <button type="button" onClick={onLeave} title="Q — leave treatment">
             ← Room <kbd>Q</kbd>
           </button>
         )}
-        <button onClick={() => onMenu(true)} aria-label="Pause and controls">
+        <button type="button" onClick={() => onMenu(true)} aria-label="Pause and controls">
           Ⅱ <span>Menu</span>
           <kbd>Esc</kbd>
         </button>
@@ -185,7 +189,7 @@ export function ClinicHud({
             </p>
           </div>
           <div className="interact-prompt">
-            <button className="primary" disabled={!ready || !near} onClick={onEnter}>
+            <button type="button" className="primary" disabled={!ready || !near} onClick={onEnter}>
               {!ready ? (
                 "Preparing the clinic…"
               ) : near ? (
@@ -201,6 +205,7 @@ export function ClinicHud({
           <div className="movement-pad" aria-label="Movement controls">
             {padOrder.map((direction, i) => (
               <button
+                type="button"
                 key={direction}
                 className={direction}
                 aria-label={`Move ${direction}`}
@@ -233,6 +238,7 @@ export function ClinicHud({
             </div>
           </section>
           <button
+            type="button"
             className="camera-reset"
             onClick={onResetCamera}
             aria-label="Reset treatment camera"
@@ -259,6 +265,7 @@ export function ClinicHud({
           <nav className="toolbelt" aria-label="Dental instruments">
             {tools.map((t, i) => (
               <button
+                type="button"
                 key={t}
                 className={`tool ${tool === t ? "selected" : ""}`}
                 aria-label={labels[i]}
@@ -334,7 +341,7 @@ export function ClinicHud({
               </span>
             ))}
           </div>
-          <button className="primary" onClick={() => onResetVisit("next")}>
+          <button type="button" className="primary" onClick={() => onResetVisit("next")}>
             {state.patient === patients.length - 1
               ? "Start a new clinic day"
               : "Meet your next patient"}{" "}
@@ -359,7 +366,7 @@ export function ClinicHud({
             ? "Your visit saves on this device."
             : "Saving is unavailable in this browser; keep this tab open to continue your visit."}
         </p>
-        <button className="primary" onClick={() => onMenu(false)}>
+        <button type="button" className="primary" onClick={() => onMenu(false)}>
           Back to the clinic →
         </button>
         <div className="controls-list">
@@ -386,15 +393,24 @@ export function ClinicHud({
           Inspect, clean, repair, fill, then cure. Use short bur passes and reassure your patient
           when they need a break.
         </p>
-        <button className="secondary sound-toggle" aria-pressed={sound} onClick={onSound}>
+        <button
+          type="button"
+          className="secondary sound-toggle"
+          aria-pressed={sound}
+          onClick={onSound}
+        >
           Sound {sound ? "on" : "off"}
         </button>
         <button
+          type="button"
           className="secondary"
           onClick={async () => {
             try {
-              if (document.fullscreenElement) {await document.exitFullscreen();}
-              else {await document.documentElement.requestFullscreen();}
+              if (document.fullscreenElement) {
+                await document.exitFullscreen();
+              } else {
+                await document.documentElement.requestFullscreen();
+              }
 
               setFullscreenError("");
             } catch {
@@ -428,10 +444,10 @@ export function ClinicHud({
             in your album.
           </p>
           <div className="reset-actions">
-            <button className="secondary" onClick={() => onResetVisit("restart")}>
+            <button type="button" className="secondary" onClick={() => onResetVisit("restart")}>
               Restart this visit
             </button>
-            <button className="secondary" onClick={() => onResetVisit("newDay")}>
+            <button type="button" className="secondary" onClick={() => onResetVisit("newDay")}>
               Start new day
             </button>
           </div>

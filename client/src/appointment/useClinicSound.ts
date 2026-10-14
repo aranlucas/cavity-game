@@ -5,10 +5,14 @@ import type { Tool } from "./rules";
 export function useClinicSound(enabled: boolean, working: boolean, tool: Tool) {
   const context = useRef<AudioContext | null>(null);
   useEffect(() => {
-    if (!enabled) {return;}
+    if (!enabled) {
+      return;
+    }
 
     const unlock = () => {
-      if (typeof AudioContext === "undefined") {return;}
+      if (typeof AudioContext === "undefined") {
+        return;
+      }
 
       try {
         context.current ??= new AudioContext();
@@ -43,8 +47,9 @@ export function useClinicSound(enabled: boolean, working: boolean, tool: Tool) {
       c.state !== "running" ||
       tool === "mirror" ||
       tool === "composite"
-    )
-      {return;}
+    ) {
+      return;
+    }
 
     const oscillator = c.createOscillator();
     const gain = c.createGain();
@@ -59,17 +64,23 @@ export function useClinicSound(enabled: boolean, working: boolean, tool: Tool) {
       gain.gain.cancelScheduledValues(c.currentTime);
       gain.gain.setTargetAtTime(0, c.currentTime, 0.01);
       oscillator.stop(c.currentTime + 0.05);
-      oscillator.onended = () => {
-        oscillator.disconnect();
-        gain.disconnect();
-      };
+      oscillator.addEventListener(
+        "ended",
+        () => {
+          oscillator.disconnect();
+          gain.disconnect();
+        },
+        { once: true },
+      );
     };
   }, [enabled, working, tool]);
 
   return useCallback(() => {
     const c = context.current;
 
-    if (!enabled || !c || c.state !== "running") {return;}
+    if (!enabled || !c || c.state !== "running") {
+      return;
+    }
 
     [660, 880].forEach((frequency, i) => {
       const oscillator = c.createOscillator();
@@ -82,10 +93,14 @@ export function useClinicSound(enabled: boolean, working: boolean, tool: Tool) {
       oscillator.connect(gain).connect(c.destination);
       oscillator.start(start);
       oscillator.stop(start + 0.24);
-      oscillator.onended = () => {
-        oscillator.disconnect();
-        gain.disconnect();
-      };
+      oscillator.addEventListener(
+        "ended",
+        () => {
+          oscillator.disconnect();
+          gain.disconnect();
+        },
+        { once: true },
+      );
     });
   }, [enabled]);
 }
