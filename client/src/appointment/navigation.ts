@@ -5,7 +5,7 @@ const obstacles = [
   [-1.72, -0.93, -1.62, -0.82],
   [-4.8, -3.65, -3.8, 0.4],
   [-4.1, -1.3, 2.75, 4],
-];
+] as const;
 
 export function canStand(x: number, z: number) {
   return (
@@ -13,9 +13,7 @@ export function canStand(x: number, z: number) {
     x < 4.4 &&
     z > -3.5 &&
     z < 4.6 &&
-    !obstacles.some(
-      ([a, b, c, d]) => x > a! - 0.18 && x < b! + 0.18 && z > c! - 0.18 && z < d! + 0.18,
-    )
+    !obstacles.some(([a, b, c, d]) => x > a - 0.18 && x < b + 0.18 && z > c - 0.18 && z < d + 0.18)
   );
 }
 

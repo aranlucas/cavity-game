@@ -1,4 +1,4 @@
-import test from "node:test";
+import { test } from "vitest";
 import assert from "node:assert/strict";
 import {
   advance,
@@ -22,7 +22,7 @@ const tick = (s, tool, target = 0, n = 1) => {
   return s;
 };
 
-await test("not started, paused, wrong tool and invalid targets cannot advance treatment", () => {
+test("not started, paused, wrong tool and invalid targets cannot advance treatment", () => {
   let s = initial();
   assert.deepEqual(tick(s, "mirror", 0, 30), s);
   s = advance(s, { type: "start" });
@@ -32,7 +32,7 @@ await test("not started, paused, wrong tool and invalid targets cannot advance t
   assert.deepEqual(tick(s, "mirror", 0, 30), s);
 });
 
-await test("bur overheats, locks treatment, and recovers after release", () => {
+test("bur overheats, locks treatment, and recovers after release", () => {
   let s = { ...initial(), started: true, step: 2 };
   s = tick(s, "excavator", 0, 50);
   assert.equal(s.cooldown, true);
@@ -44,7 +44,7 @@ await test("bur overheats, locks treatment, and recovers after release", () => {
   assert.equal(s.heat, 0);
 });
 
-await test("breathing restores comfort and clears heat without changing treatment progress", () => {
+test("breathing restores comfort and clears heat without changing treatment progress", () => {
   let s = { ...initial(), started: true, comfort: 30, heat: 85 };
   const p = [...s.progress];
   s = advance(s, { type: "breathe" });
@@ -54,7 +54,7 @@ await test("breathing restores comfort and clears heat without changing treatmen
   assert.equal("breaks" in s, false);
 });
 
-await test("all three appointments complete in sequence, with new cases reset", () => {
+test("all three appointments complete in sequence, with new cases reset", () => {
   for (let patient = 0; patient < patients.length; patient++) {
     let s = advance(initial(patient), { type: "start" });
 
@@ -84,7 +84,7 @@ await test("all three appointments complete in sequence, with new cases reset", 
   }
 });
 
-await test("large frame delays are clamped and low comfort requires a break", () => {
+test("large frame delays are clamped and low comfort requires a break", () => {
   let s = { ...initial(), started: true, comfort: 0 };
   s = advance(s, { type: "tick", dt: 100, target: 0, tool: "mirror" });
   assert.equal(s.progress[0], 0);
@@ -93,7 +93,7 @@ await test("large frame delays are clamped and low comfort requires a break", ()
   assert.ok(s.progress[0] !== undefined && s.progress[0] < 0.2);
 });
 
-await test("treating and canTreat are the single live-work gates", () => {
+test("treating and canTreat are the single live-work gates", () => {
   const s = { ...initial(), started: true };
   assert.equal(treating(s), true);
   assert.equal(treating(s, true), false);

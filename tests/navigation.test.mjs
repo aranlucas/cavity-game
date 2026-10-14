@@ -1,8 +1,8 @@
-import test from "node:test";
+import { test } from "vitest";
 import assert from "node:assert/strict";
 import { canStand, walk } from "../client/src/appointment/navigation.ts";
 
-await test("room walls and furniture block walking, while the approach to the station is clear", () => {
+test("room walls and furniture block walking, while the approach to the station is clear", () => {
   for (const { x, z } of [
     { x: 5, z: 0 },
     { x: 0, z: 5 },
@@ -28,7 +28,7 @@ await test("room walls and furniture block walking, while the approach to the st
   assert.ok(Math.hypot(p.x, p.z + 1.755) < 2.4, "station must be reachable");
 });
 
-await test("diagonal walking has the same speed, and long frame delays cannot tunnel through furniture", () => {
+test("diagonal walking has the same speed, and long frame delays cannot tunnel through furniture", () => {
   const a = walk(3, 3, 0, 1, 0, 0.016);
   const b = walk(3, 3, 0, 1, 1, 0.016);
 

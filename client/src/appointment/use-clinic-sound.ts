@@ -4,7 +4,7 @@ import type { Tool } from "./rules";
 /** Quiet, locally synthesized feedback. Browsers unlock audio on the first gesture. */
 export function useClinicSound(enabled: boolean, working: boolean, tool: Tool) {
   const context = useRef<AudioContext | null>(null);
-  useEffect(() => {
+  useEffect((): void | (() => void) => {
     if (!enabled) {
       return;
     }
@@ -37,14 +37,13 @@ export function useClinicSound(enabled: boolean, working: boolean, tool: Tool) {
     },
     [],
   );
-  useEffect(() => {
+  useEffect((): void | (() => void) => {
     const c = context.current;
 
     if (
       !enabled ||
       !working ||
-      !c ||
-      c.state !== "running" ||
+      c?.state !== "running" ||
       tool === "mirror" ||
       tool === "composite"
     ) {
@@ -78,11 +77,11 @@ export function useClinicSound(enabled: boolean, working: boolean, tool: Tool) {
   return useCallback(() => {
     const c = context.current;
 
-    if (!enabled || !c || c.state !== "running") {
+    if (!enabled || c?.state !== "running") {
       return;
     }
 
-    [660, 880].forEach((frequency, i) => {
+    for (const [i, frequency] of [660, 880].entries()) {
       const oscillator = c.createOscillator();
       const gain = c.createGain();
       const start = c.currentTime + i * 0.12;
@@ -101,6 +100,6 @@ export function useClinicSound(enabled: boolean, working: boolean, tool: Tool) {
         },
         { once: true },
       );
-    });
+    }
   }, [enabled]);
 }

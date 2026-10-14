@@ -45,6 +45,8 @@ export const patients = [
     name: "Mia",
     age: 7,
     color: "#e8b192",
+    shirtColor: "#d6ad65",
+    hairColor: "#503525",
     quote: "Will my smile be ready for my space adventure?",
     spots: [0, 1],
     sticker: "Cosmic explorer",
@@ -54,6 +56,8 @@ export const patients = [
     name: "Leo",
     age: 8,
     color: "#b77c52",
+    shirtColor: "#819aa8",
+    hairColor: "#30281f",
     quote: "I want teeth as shiny as a T. rex!",
     spots: [1, 2, 3],
     sticker: "Dinosaur champion",
@@ -63,6 +67,8 @@ export const patients = [
     name: "Ava",
     age: 6,
     color: "#efc5aa",
+    shirtColor: "#c18e8a",
+    hairColor: "#754b2f",
     quote: "Can we pretend the blue light is a jellyfish?",
     spots: [0, 2, 3],
     sticker: "Ocean adventurer",
@@ -106,7 +112,7 @@ export function canTreat(
     return false;
   }
 
-  if (tool !== steps[state.step]!.tool) {
+  if (tool !== getStep(state.step).tool) {
     return false;
   }
 
@@ -115,7 +121,7 @@ export function canTreat(
     Number.isInteger(target) &&
     target >= 0 &&
     target < state.progress.length &&
-    state.progress[target]! < 1
+    (state.progress[target] ?? 1) < 1
   );
 }
 
@@ -127,7 +133,7 @@ export function initial(patient = 0): Appointment {
     patient,
     started: false,
     step: 0,
-    progress: patients[patient]!.spots.map(() => 0),
+    progress: getPatient(patient).spots.map(() => 0),
     comfort: 100,
     heat: 0,
     score: 0,
@@ -202,8 +208,11 @@ export function advance(s: Appointment, a: Action): Appointment {
   const recovering = comfort <= 15 || ((s.comfort <= 15 || s.recovering) && comfort < 35);
   const progress = [...s.progress];
 
-  if (operating && !cooldown && !recovering) {
-    progress[a.target!] = Math.min(1, progress[a.target!]! + dt / steps[s.step]!.duration);
+  const target = a.target;
+  const currentProgress = target === null ? undefined : progress[target];
+
+  if (operating && !cooldown && !recovering && target !== null && currentProgress !== undefined) {
+    progress[target] = Math.min(1, currentProgress + dt / getStep(s.step).duration);
   }
 
   if (progress.every((p) => p >= 1)) {
@@ -226,4 +235,24 @@ export function advance(s: Appointment, a: Action): Appointment {
   }
 
   return { ...s, progress, comfort, heat, cooldown, recovering };
+}
+
+export function getPatient(index: number) {
+  const patient = patients[index];
+
+  if (!patient) {
+    throw new RangeError(`Unknown clinic patient: ${index}`);
+  }
+
+  return patient;
+}
+
+export function getStep(index: number) {
+  const step = steps[index];
+
+  if (!step) {
+    throw new RangeError(`Unknown treatment step: ${index}`);
+  }
+
+  return step;
 }

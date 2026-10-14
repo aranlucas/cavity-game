@@ -9,5 +9,5 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["tests/**/*.mjs", "oxfmt.config.ts"]
+  "include": ["tests/**/*.mjs", "oxfmt.config.ts", "vitest.config.mts"]
 }
