@@ -18,7 +18,7 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "three": "^0.186.1",
-    "zod": "4.6.5"
+    "zod": "4.6.6"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "2.0.0-beta.sha-805ec1ff3",
@@ -26,9 +26,9 @@
     "@types/react-dom": "^19.3.0",
     "@types/three": "^0.186.0",
     "@vitejs/plugin-react": "^6.1.2",
-    "cf": "1.0.0-beta.13",
+    "cf": "1.0.0-beta.14",
     "portless": "0.15.7",
     "typescript": "^7.0.2",
-    "vite": "^8.3.3"
+    "vite": "^8.3.4"
   }
 }
