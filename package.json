@@ -12,12 +12,15 @@
     "lint:fix": "oxlint client test --fix",
     "format": "oxfmt client",
     "format:check": "oxfmt --check client",
+    "prepare": "husky",
     "test": "npm run typecheck:tooling && vitest run",
     "typecheck:tooling": "tsc --noEmit -p tsconfig.json"
   },
   "devDependencies": {
     "@aranlucas/oxforge": "^0.2.2",
     "@types/node": "26.6.5",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
     "oxfmt": "^0.73.0",
     "oxlint": "^1.88.0",
     "oxlint-tsgolint": "^7.0.2004",
@@ -27,5 +30,14 @@
   },
   "overrides": {
     "sharp": "0.35.5"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}": [
+      "oxlint --fix",
+      "oxfmt --no-error-on-unmatched-pattern"
+    ],
+    "*.{json,jsonc,json5,css,scss,md,mdx,yml,yaml,html,toml,vue,svelte,astro,graphql}": [
+      "oxfmt --no-error-on-unmatched-pattern"
+    ]
   }
 }
