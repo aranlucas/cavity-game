@@ -15,11 +15,11 @@ _This is an asset preview from the project's Blender models, not a gameplay scre
 ## Run
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 ```
 
-Open **https://cavity-game.localhost**. `npm run dev` runs through [Portless](https://github.com/vercel-labs/portless) (a dev dependency); its first run may ask for `sudo` to bind port 443 and trust a local certificate. The appointment game works without a backend, account, or room code. It saves progress and the sound setting in this browser's local storage every second and when leaving the page. Returning starts in the room with the current visit ready to resume. If storage is unavailable, the menu reports that saving is unavailable.
+Open **https://cavity-game.localhost**. `pnpm run dev` runs through [Portless](https://github.com/vercel-labs/portless) (a dev dependency); its first run may ask for `sudo` to bind port 443 and trust a local certificate. The appointment game works without a backend, account, or room code. It saves progress and the sound setting in this browser's local storage every second and when leaving the page. Returning starts in the room with the current visit ready to resume. If storage is unavailable, the menu reports that saving is unavailable.
 
 ## Play
 
@@ -71,16 +71,16 @@ Both builders accept arguments after `--`: use `--output-dir /path/to/models` to
 - `test/*.test.mjs`: gameplay, clinic-day progression, save, navigation, tooth-surface, and GLB regressions (Vitest on Node 24).
 
 ```bash
-npm test
-npx tsc -p client/tsconfig.json --noEmit
-npm run build  # Typecheck, Cloudflare Vite build, and cf deployment dry run
-npm run lint
+pnpm test
+pnpm --filter @cavity-rush/client exec tsc -p tsconfig.json --noEmit
+pnpm run build  # Typecheck, Cloudflare Vite build, and cf deployment dry run
+pnpm run lint
 ```
 
 GitHub Actions runs the tests, build, and lint checks on pushes and pull requests.
 
-`npm run build` typechecks the client, builds it with the Cloudflare Vite plugin, and validates an assets-only deployment through `cf deploy --dry-run`. It uploads nothing and needs no Cloudflare credentials. The root scripts run `cf` inside the `client` workspace, where `client/vite.config.ts` configures the build and `client/cloudflare.config.ts` defines the `cavity-rush` Worker and single-page application fallback. Generated deployment output and types live under `client/.cloudflare/` and are ignored by Git.
+`pnpm run build` typechecks the client, builds it with the Cloudflare Vite plugin, and validates an assets-only deployment through `cf deploy --dry-run`. It uploads nothing and needs no Cloudflare credentials. The root scripts run `cf` inside the `client` workspace, where `client/vite.config.ts` configures the build and `client/cloudflare.config.ts` defines the `cavity-rush` Worker and single-page application fallback. Generated deployment output and types live under `client/.cloudflare/` and are ignored by Git.
 
-`npm run deploy` runs the same typecheck and build, then publishes the static assets through the [Cloudflare CLI (`cf`)](https://developers.cloudflare.com/cf/projects/). Authenticate with `npm exec -w client -- cf auth login` first, or set `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` in CI. The config retains the `GameRoom` deletion declaration for the former multiplayer namespace. There is no Cloudflare Worker script and no `/ws` Durable Object. The appointment game does not need a backend to play locally.
+`pnpm run deploy` runs the same typecheck and build, then publishes the static assets through the [Cloudflare CLI (`cf`)](https://developers.cloudflare.com/cf/projects/). Authenticate with `pnpm --filter @cavity-rush/client exec cf auth login` first, or set `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` in CI. The config retains the `GameRoom` deletion declaration for the former multiplayer namespace. There is no Cloudflare Worker script and no `/ws` Durable Object. The appointment game does not need a backend to play locally.
 
 The current Cloudflare Vite beta runs `docker image ls` to clean up previous container build images even when the project has no containers. If Docker is installed but its daemon is stopped, that cleanup can print a Docker connection error; the plugin catches the failure and the assets-only build continues. Docker is not required for this project.

@@ -1,35 +1,31 @@
 {
   "name": "cavity-rush",
   "private": true,
-  "workspaces": [
-    "client"
-  ],
   "scripts": {
-    "dev": "npm run dev -w client",
-    "build": "npm run build -w client",
-    "deploy": "npm run deploy -w client",
+    "dev": "pnpm --filter @cavity-rush/client run dev",
+    "build": "pnpm --filter @cavity-rush/client run build",
+    "deploy": "pnpm --filter @cavity-rush/client run deploy",
     "lint": "oxlint client test",
     "lint:fix": "oxlint client test --fix",
     "format": "oxfmt client",
     "format:check": "oxfmt --check client",
     "prepare": "husky",
-    "test": "npm run typecheck:tooling && vitest run",
+    "test": "pnpm run typecheck:tooling && vitest run",
     "typecheck:tooling": "tsc --noEmit -p tsconfig.json"
   },
   "devDependencies": {
     "@aranlucas/oxforge": "^0.2.2",
     "@types/node": "26.6.5",
+    "@types/three": "^0.186.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.6.0",
     "oxfmt": "^0.73.0",
     "oxlint": "^1.88.0",
     "oxlint-tsgolint": "^7.0.2004",
+    "three": "^0.186.1",
     "typescript": "^7.0.2",
     "vitest": "5.0.4",
     "zod": "4.6.6"
-  },
-  "overrides": {
-    "sharp": "0.35.5"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}": [
@@ -39,5 +35,6 @@
     "*.{json,jsonc,json5,css,scss,md,mdx,yml,yaml,html,toml,vue,svelte,astro,graphql}": [
       "oxfmt --no-error-on-unmatched-pattern"
     ]
-  }
+  },
+  "packageManager": "pnpm@12.11.2"
 }
