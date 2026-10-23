@@ -10,7 +10,7 @@
     "format": "oxfmt client",
     "format:check": "oxfmt --check client",
     "prepare": "husky",
-    "test": "pnpm run typecheck:tooling && vitest run",
+    "test": "vitest run",
     "typecheck:tooling": "tsc --noEmit -p tsconfig.json"
   },
   "devDependencies": {

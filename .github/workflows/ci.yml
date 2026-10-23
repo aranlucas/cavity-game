@@ -5,16 +5,18 @@ on:
   push:
     branches: [main]
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   ci:
+    if: ${{ github.event.pull_request.draft != true }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -33,6 +35,9 @@ jobs:
       - parallel:
           - name: Lint
             run: pnpm run lint && pnpm run format:check
+
+          - name: Typecheck
+            run: pnpm run typecheck:tooling
 
           - name: Test
             run: pnpm test
