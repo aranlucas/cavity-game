@@ -10,8 +10,9 @@
     "format": "oxfmt client",
     "format:check": "oxfmt --check client",
     "prepare": "husky",
-    "test": "pnpm run typecheck:tooling && vitest run",
-    "typecheck:tooling": "tsc --noEmit -p tsconfig.json"
+    "test": "vitest run",
+    "typecheck:tooling": "tsc --noEmit -p tsconfig.json",
+    "pretest": "pnpm run typecheck:tooling"
   },
   "devDependencies": {
     "@aranlucas/oxforge": "^0.2.2",
