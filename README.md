@@ -1,6 +1,6 @@
 # Little Smiles
 
-[![Checks](https://github.com/aranlucas/cavity-game/actions/workflows/checks.yml/badge.svg?branch=main)](https://github.com/aranlucas/cavity-game/actions/workflows/checks.yml)
+[![Checks](https://github.com/aranlucas/cavity-game/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/aranlucas/cavity-game/actions/workflows/ci.yml)
 ![React Three Fiber](https://img.shields.io/badge/React_Three_Fiber-3D_game-000000?logo=threedotjs&logoColor=white)
 ![Blender](https://img.shields.io/badge/Blender-original_3D_assets-E87D0D?logo=blender&logoColor=white)
 
