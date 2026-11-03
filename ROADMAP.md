@@ -1,10 +1,10 @@
 # Feature roadmap
 
-Planning baseline: `1aedd1f020d9` on `origin/main`, 2026-10-26. Games follow the portfolio's Digits/MCP priorities.
+Planning baseline: `1aedd1f020d9` on `origin/main`, 2026-10-26.
 
 ## Outcome
 
-Help a new player finish a relaxed clinic day and choose to return. [Little Smiles](README.md) already has three fictional patients, five treatment stages, local saves, comfort and heat mechanics, and a sticker album.
+Help a new [Little Smiles](README.md) player finish a relaxed clinic day and choose to return.
 
 ## 1. A first appointment that teaches itself
 
@@ -31,4 +31,4 @@ Add a small variation in targets or patient preferences only after the first-day
 
 ## Boundaries
 
-No multiplayer backend, accounts, live AI or medical-training claims are needed. The anatomy and care mechanics remain simplified fiction. Use the existing deterministic rules and test runner, and preserve accessible controls. The value signal is enjoyable voluntary replay, not session length or a larger asset count.
+Keep the game single-player, without accounts, live AI, or medical-training claims. Preserve accessible controls and simplified fictional care mechanics. Judge success by enjoyable voluntary replay, not session length or a larger asset count.
