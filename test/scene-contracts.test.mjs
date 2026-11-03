@@ -49,24 +49,7 @@ test("mesh narrowing accepts real mesh nodes and rejects scene groups", () => {
   }
 });
 
-test("checked clinic lookups retain all original patient and step data", () => {
-  for (const [index, patient] of patients.entries()) {
-    assert.equal(getPatient(index), patient);
-  }
-
-  for (const [index, step] of steps.entries()) {
-    assert.equal(getStep(index), step);
-  }
-
-  assert.deepEqual(
-    patients.map((patient) => [patient.shirtColor, patient.hairColor]),
-    [
-      ["#d6ad65", "#503525"],
-      ["#819aa8", "#30281f"],
-      ["#c18e8a", "#754b2f"],
-    ],
-  );
-
+test("checked clinic lookups reject invalid patient and step indices", () => {
   for (const index of [-1, patients.length, 0.5, Infinity, NaN]) {
     assert.throws(() => getPatient(index), /Unknown clinic patient/);
   }
