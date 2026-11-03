@@ -7,35 +7,42 @@
 - License: **CC0 1.0 / Public Domain**, shown on the entry page: [license](https://creativecommons.org/publicdomain/zero/1.0/).
 - Original download: [NIH 3D source GLB](https://3d.nih.gov/api/submissions/4342/runs/c4393ceb-f871-4080-81d3-2cda01e35d0c/output-files/91793).
 - Original filename: `Maxillary_teeth_w_base_NIH3D.glb`.
-- Local source: `source/dental-scan.glb` (34,248,404 bytes).
-- Adaptations: centered and scaled, flipped cast to expose occlusal surfaces, corrected normals, decimated to 104,644 triangles, assigned enamel/gingival materials, baked vertex ambient occlusion, exported and Meshopt-compressed.
-- Shipped model: `client/public/models/dental-arch.glb` (555,668 bytes).
+- Local source: [dental-scan.glb](source/dental-scan.glb).
+- Adaptations: centered and scaled, flipped cast to expose occlusal surfaces, corrected normals, decimated, assigned enamel/gingival materials, baked vertex ambient occlusion, exported and Meshopt-compressed.
+- Shipped model: [dental-arch.glb](../client/public/models/dental-arch.glb).
 
-This is an **adult upper dental cast**, not primary dentition and not a child patient scan. It is displayed on a cabinet as a teaching model; the player treats the separate fictional patient mouth described below. Gingival material boundaries use crown masks refined by front, inner, and side image stencils projected onto visible scan surfaces, with closed posterior masks and triangle-scale boundary smoothing. The reference coordinates are stored in `scripts/*-gumline-trace.json` and applied by `scripts/trace-front-gumline.py`. These are artistic boundaries, not a clinical segmentation. Gameplay does not alter the scan geometry.
+This is an **adult upper dental cast**, not primary dentition or a child patient scan. It is displayed on a cabinet as a teaching model; gameplay does not alter its geometry. Its gingival material boundaries are artistic, not clinical segmentation. Reference stencils in `scripts/*-gumline-trace.json` are applied by `scripts/trace-front-gumline.py` to refine visible scan surfaces.
 
-## Original instrument assets
+## Original assets
 
-The mirror, polisher, bur, composite applicator, and curing light were authored for this project in Blender through Blender MCP. They have mesh geometry, metallic/roughness materials, and consistent tip origins. No third-party instrument meshes or textures are included.
+The mirror, polisher, bur, composite applicator, and curing light were authored for this project in Blender through Blender MCP. No third-party instrument meshes or textures are included.
 
-`assets/dental-studio.blend` contains the editable scan, five instrument scenes, and chair. `scripts/process-scan.py` and `scripts/build-instruments.py` document the original source pipeline; the gumline scripts above preserve the later surface refinements.
+The patient, treatment mouth, chair, and dental delivery equipment were also authored for this project in Blender. They are original meshes, not third-party character or equipment assets or patient scans. The clinic shell, cabinetry, plants, and wall art are original procedural geometry in `client/src/appointment/clinic.tsx`.
 
-## Original patient and treatment mouth
+The player treats the fictional patient mouth, separate from the NIH cast. Treatment animates authored plaque, decay, and filling inserts; it does not perform freeform volumetric destruction. Anatomy and treatment are simplified fiction, not clinical training.
 
-The reclining patient and treatment mouth were authored for this project in Blender with `scripts/build-patient.py`, run through Blender's background Python interface. The native editable source is `assets/patient-studio.blend`; the source also includes preview scenes. `assets/patient-preview.png`, `assets/treatment-mouth-preview.png`, and `assets/treatment-face-preview.png` show the authored models and their fit in the face.
+## Editable sources and rebuilding
 
-- `client/public/models/patient.glb` contains a continuous face and jaw sculpt, fitted upper and lower lips, and named skin, shirt, and hair materials used for the three fictional patient appearances.
-- `client/public/models/treatment-mouth.glb` contains distinct incisor, canine, and molar crowns, inward-angled anterior teeth, recessed tongue geometry, four tooth treatment sites, modeled recesses, and separate named plaque, decay, and filling inserts.
+Paths below are relative to the repository root.
 
-These are original meshes, not third-party character assets or patient scans. Tooth treatment animates the authored inserts: plaque and decay shrink away, then composite fills the recesses and is cured. It does not perform freeform volumetric destruction. The anatomy and treatment sequence are fictional and simplified, and the game is not clinical training.
+| Asset | Blender source | Builder |
+| --- | --- | --- |
+| Patient and treatment mouth | `assets/patient-studio.blend` | `scripts/build-patient.py` |
+| Dental delivery equipment | `assets/clinic-equipment.blend` | `scripts/build-equipment.py` |
+| Teaching cast, five instruments, and chair | `assets/dental-studio.blend` | `scripts/process-scan.py`, `scripts/build-instruments.py`, `scripts/build-chair.py` |
 
-## Original chair, equipment, and room
+To rebuild the patient, mouth, and equipment on macOS with Blender installed, run from the repository root:
 
-The chair in `client/public/models/chair.glb` was authored in Blender for this project with `scripts/build-chair.py` and is saved in `assets/dental-studio.blend`.
+```bash
+/Applications/Blender.app/Contents/MacOS/Blender --background --factory-startup --threads 2 --python scripts/build-patient.py
+/Applications/Blender.app/Contents/MacOS/Blender --background --factory-startup --threads 2 --python scripts/build-equipment.py
+sh scripts/optimize-models.sh
+```
 
-Dental delivery equipment was authored with `scripts/build-equipment.py`, run through Blender's background Python interface. `assets/clinic-equipment.blend` retains individually named editable parts and its preview scene; `assets/equipment-preview.png` is the rendered preview. The shipped `client/public/models/equipment.glb` is 192,116 bytes. Static parts are grouped by material for the runtime export. No third-party equipment meshes or textures are included.
+Use your Blender executable path on other systems. The builders overwrite their `.blend` sources and preview renders under `assets/`, and export self-contained GLBs to `client/public/models`. Both accept arguments after `--`: `--output-dir /path/to/models` changes the GLB destination and `--skip-preview` skips rendering. The `.blend` sources still save under `assets/`.
 
-The clinic shell, cabinetry, plants, and wall art are original procedural geometry in `client/src/appointment/Clinic.tsx`. It also places the Blender-authored chair, patient, and equipment into the shared game scene.
+The optimization script uses `pnpm dlx @gltf-transform/cli@4.5.0` and replaces the three default GLB exports with Meshopt-compressed versions. It preserves node names, material names, and repair-insert pivots required by gameplay. If you export elsewhere, the script still operates on `client/public/models`.
 
-## Web export
+For the original teaching-cast pipeline, `scripts/process-scan.py` must precede `scripts/build-instruments.py` in the same Blender document; the latter expects the scan scene and object to exist. The later gumline stencil script expects the `NIH_Dental_Arch` object. These scripts are separate from the patient/equipment rebuild above.
 
-`scripts/optimize-models.sh` applies Meshopt compression to the patient, treatment mouth, and equipment exports while preserving node names, material names, and repair-insert pivots required by gameplay. All three GLBs package their geometry and materials locally. `assets/asset-validation.json` records current sizes and glTF validation results; `tests/assets.test.mjs` checks the shipped GLBs, required treatment inserts, and patient material names.
+`assets/asset-validation.json` records an export validation snapshot. `test/assets.test.mjs` checks shipped GLBs, required treatment inserts, and patient material names.
