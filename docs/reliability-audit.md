@@ -69,3 +69,9 @@ and speculative Canvas boundary propagation were rejected for lack of a supporte
 contract or reproducible defect. The fix prevents Escape's native dialog action
 on repeats too, retaining one toggle per physical press. Published `e2e` packages
 were installed with `--ignore-scripts`; no tests, browser runs or builds ran locally.
+
+Implementation review also caught that baseline-failure proof must be scoped to
+this PR (otherwise future fixed baselines would incorrectly fail CI), and checked
+the exact repeated-dialog assertion location. Both were corrected. Review found
+no further concrete implementation objection; browser/runtime evidence remains
+pending CI.

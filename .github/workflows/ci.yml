@@ -77,7 +77,7 @@ jobs:
           assert.equal(results.length, 1);
           const attempt = results[0].attempts.at(-1);
           assert.equal(attempt.error.code, 'ASSERTION_FAILED');
-          assert.equal(attempt.error.source.line, 12, 'failure must be the dialog assertion after repeat');
+          assert.equal(attempt.error.source.line, 11, 'failure must be the dialog assertion after repeat');
           JS
           cp -r .e2e /tmp/pause-before-fix
       - name: Run deterministic clinic journeys
