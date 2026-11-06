@@ -150,3 +150,11 @@ settings to disable shadows and render at half resolution. It retains real
 assets, geometry, collision, camera, input, treatment, scoring and storage; it
 does not establish visual fidelity. Production code/config is unchanged. Camera
 diagnostics remain temporary until the real full journey passes.
+
+Run [42313568142](https://github.com/aranlucas/cavity-game/actions/runs/42313568142)
+reached the chair and entered real treatment. It failed waiting for the first
+mirror target to finish. Reapply the CI renderer budget after viewport resize
+(R3F resets DPR), allow bounded 60-second assertions for software rendering, and
+capture saved progress plus unnormalized key data if a target hold fails. This
+separates progress starvation from a real keyboard-input defect without replacing
+the action or weakening the completion assertion. Full journey remains pending.

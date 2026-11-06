@@ -20,16 +20,21 @@ test("treat a visit, bank a sticker, meet Leo and restore the saved visit", asyn
   }`);
   // Software CI validates gameplay, not shadow quality. Keep the real scene and
   // camera, but reduce raster work so frame-clamped walking can make progress.
-  await browser.evaluate(`async () => {
+  const reduceRasterWork = () =>
+    browser.evaluate(`async () => {
     const { _roots } = await import('/node_modules/.vite/deps/@react-three_fiber.js');
     const { gl } = _roots.get(document.querySelector('canvas')).store.getState();
     gl.shadowMap.enabled = false;
     gl.setPixelRatio(0.5);
   }`);
+  await reduceRasterWork();
   console.log("navigation before walking", await navigationEvidence());
   await browser.evaluate(() => {
     window.addEventListener("keydown", (event) =>
-      console.info("navigation key", event.key, event.code),
+      console.info(
+        "navigation key",
+        JSON.stringify({ key: event.key, code: event.code, repeat: event.repeat }),
+      ),
     );
   });
   // Walk around the chair's left edge, then strafe back toward it. Continuing
@@ -52,6 +57,7 @@ test("treat a visit, bank a sticker, meet Leo and restore the saved visit", asyn
   }
   await screen.getByRole("button", /Begin treatment/).tap();
   await browser.setViewport({ width: 960, height: 720 });
+  await reduceRasterWork();
   const stages = [
     ["Dental mirror", "Look closely", "A fresh start"],
     ["Polisher", "A fresh start", "Gentle little passes"],
@@ -65,7 +71,18 @@ test("treat a visit, bank a sticker, meet Leo and restore the saved visit", asyn
     const first = screen.getByRole("button", "Treat spot 1");
     await first.focus();
     await browser.keyboard.down("Space");
-    await expect(first).toBeDisabled();
+    try {
+      await expect(first).toBeDisabled();
+    } finally {
+      console.log(
+        "treatment hold evidence",
+        current,
+        await browser.evaluate(() => ({
+          save: localStorage.getItem("little-smiles:clinic:v1"),
+          focused: document.activeElement?.outerHTML ?? null,
+        })),
+      );
+    }
     await browser.keyboard.up("Space");
     const second = screen.getByRole("button", "Treat spot 2");
     await second.focus();
