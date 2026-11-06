@@ -119,3 +119,8 @@ shows it slides past the chair to the left and then away from the entry radius.
 A longer wait cannot correct a walking direction. Remediation will use the
 existing movement controls to walk forward then strafe toward the chair, retaining
 the full treatment, reward and save assertions. No gameplay change is proposed.
+
+Independent remediation review caught that the movement pad is intentionally
+hidden for desktop fine pointers. The journey now opens at its supported
+550px breakpoint for movement, then resizes to desktop for the treatment checks.
+Both are existing product layouts; no styles or input internals are overridden.

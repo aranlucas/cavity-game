@@ -6,6 +6,8 @@ test("treat a visit, bank a sticker, meet Leo and restore the saved visit", asyn
   browser,
   screen,
 }) => {
+  // The movement pad is visible at the supported narrow-screen breakpoint.
+  await browser.setViewport({ width: 550, height: 900 });
   await app.open("/");
   await expect(screen.getByRole("button", "Approach the patient chair")).toBeVisible();
   // Walk around the chair's left edge, then strafe back toward it. Continuing
@@ -17,6 +19,7 @@ test("treat a visit, bank a sticker, meet Leo and restore the saved visit", asyn
   await expect(screen.getByRole("button", /Begin treatment/)).toBeEnabled({ timeout: 180_000 });
   await browser.keyboard.up("d");
   await screen.getByRole("button", /Begin treatment/).tap();
+  await browser.setViewport({ width: 960, height: 720 });
   const stages = [
     ["Dental mirror", "Look closely", "A fresh start"],
     ["Polisher", "A fresh start", "Gentle little passes"],
