@@ -103,3 +103,19 @@ headings contain the age, and the next-patient button contains an arrow. Updated
 these selectors to regex names, with level 1 still distinguishing the patient
 heading. GPU warnings were observed but were insufficient to establish the
 earlier walking-timeout diagnosis. The pause regression still passed this run.
+
+## Merge reconciliation and remaining validation
+
+PR #60 merged on 2026-11-06 at 22:22:22 UTC as `86705c0`, with head
+`8bab2cb`. This does **not** complete the audit: the PR browser run was
+cancelled, and post-merge run
+[42304207118](https://github.com/aranlucas/cavity-game/actions/runs/42304207118)
+passed pause and corrupt-save/quota journeys but failed treatment entry. The
+existing unit/typecheck/lint/build job passed. No completed treatment/reward
+journey has yet passed CI. Existing portfolio handoff is preserved.
+
+Static tracing of the test's single forward hold against the collision bounds
+shows it slides past the chair to the left and then away from the entry radius.
+A longer wait cannot correct a walking direction. Remediation will use the
+existing movement controls to walk forward then strafe toward the chair, retaining
+the full treatment, reward and save assertions. No gameplay change is proposed.

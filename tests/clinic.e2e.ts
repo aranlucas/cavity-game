@@ -8,10 +8,14 @@ test("treat a visit, bank a sticker, meet Leo and restore the saved visit", asyn
 }) => {
   await app.open("/");
   await expect(screen.getByRole("button", "Approach the patient chair")).toBeVisible();
-  // Follow the chair's collision boundary using the documented walking controls.
-  await browser.keyboard.down("w");
+  // Walk around the chair's left edge, then strafe back toward it. Continuing
+  // forward alone walks away from the station after sliding past the chair.
+  const forward = screen.getByRole("button", "Move forward");
+  await forward.longPress({ duration: 10_000 });
+  await forward.longPress({ duration: 10_000 });
+  await browser.keyboard.down("d");
   await expect(screen.getByRole("button", /Begin treatment/)).toBeEnabled({ timeout: 180_000 });
-  await browser.keyboard.up("w");
+  await browser.keyboard.up("d");
   await screen.getByRole("button", /Begin treatment/).tap();
   const stages = [
     ["Dental mirror", "Look closely", "A fresh start"],
