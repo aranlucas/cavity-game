@@ -29,6 +29,7 @@ export default {
   retries: 0,
   timeout: 600_000,
   assertionTimeout: 20_000,
+  actionTimeout: 120_000,
   trace: "retain-on-failure",
   reporters: ["list", "junit"],
 } satisfies E2EConfig;

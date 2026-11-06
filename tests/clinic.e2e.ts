@@ -27,8 +27,13 @@ test("treat a visit, bank a sticker, meet Leo and restore the saved visit", asyn
   // Walk around the chair's left edge, then strafe back toward it. Continuing
   // forward alone walks away from the station after sliding past the chair.
   const forward = screen.getByRole("button", "Move forward");
-  await forward.longPress({ duration: 10_000 });
-  await forward.longPress({ duration: 10_000 });
+  for (const pass of [1, 2]) {
+    try {
+      await forward.longPress({ duration: 10_000 });
+    } finally {
+      console.log("navigation after forward hold", pass, await navigationEvidence());
+    }
+  }
   console.log("navigation after forward holds", await navigationEvidence());
   await browser.keyboard.down("d");
   try {

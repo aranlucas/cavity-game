@@ -132,3 +132,10 @@ wall-facing camera, so the static route estimate is not sufficient evidence.
 Temporary read-only CI diagnostics record R3F camera position before/after the
 walking actions and actual keyboard event codes. They do not change gameplay or
 fulfill any assertion; remove this scaffolding after identifying the route.
+
+Run [42311767850](https://github.com/aranlucas/cavity-game/actions/runs/42311767850)
+recorded the expected initial camera at `(2.7, 1.95, 3.8)`, then hit the runner's
+default 30-second action timeout after a 10-second long-press input dispatched,
+before later camera observations ran. Raised actionTimeout to 120 seconds and
+record camera position in finally after each forward gesture. The movement
+assertion and remaining full-journey gates are unchanged and still unfinished.
