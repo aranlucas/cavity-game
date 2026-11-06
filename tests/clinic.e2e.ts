@@ -10,14 +10,33 @@ test("treat a visit, bank a sticker, meet Leo and restore the saved visit", asyn
   await browser.setViewport({ width: 550, height: 900 });
   await app.open("/");
   await expect(screen.getByRole("button", "Approach the patient chair")).toBeVisible();
+  // Temporary CI diagnostics: remove after establishing the actual walking path.
+  const navigationEvidence = () =>
+    browser.evaluate(`async () => {
+    const { _roots } = await import('/node_modules/.vite/deps/@react-three_fiber.js');
+    const root = _roots.get(document.querySelector('canvas'));
+    const camera = root.store.getState().camera;
+    return { position: camera.position.toArray(), rotation: camera.rotation.toArray() };
+  }`);
+  console.log("navigation before walking", await navigationEvidence());
+  await browser.evaluate(() => {
+    window.addEventListener("keydown", (event) =>
+      console.info("navigation key", event.key, event.code),
+    );
+  });
   // Walk around the chair's left edge, then strafe back toward it. Continuing
   // forward alone walks away from the station after sliding past the chair.
   const forward = screen.getByRole("button", "Move forward");
   await forward.longPress({ duration: 10_000 });
   await forward.longPress({ duration: 10_000 });
+  console.log("navigation after forward holds", await navigationEvidence());
   await browser.keyboard.down("d");
-  await expect(screen.getByRole("button", /Begin treatment/)).toBeEnabled({ timeout: 180_000 });
-  await browser.keyboard.up("d");
+  try {
+    await expect(screen.getByRole("button", /Begin treatment/)).toBeEnabled({ timeout: 180_000 });
+  } finally {
+    console.log("navigation after strafe", await navigationEvidence());
+    await browser.keyboard.up("d");
+  }
   await screen.getByRole("button", /Begin treatment/).tap();
   await browser.setViewport({ width: 960, height: 720 });
   const stages = [

@@ -124,3 +124,11 @@ Independent remediation review caught that the movement pad is intentionally
 hidden for desktop fine pointers. The journey now opens at its supported
 550px breakpoint for movement, then resizes to desktop for the treatment checks.
 Both are existing product layouts; no styles or input internals are overridden.
+
+Run [42310639477](https://github.com/aranlucas/cavity-game/actions/runs/42310639477)
+confirmed both supported movement-pad holds executed, but treatment entry still
+failed. Pause and quota/corrupt-save checks passed. The failure image shows a
+wall-facing camera, so the static route estimate is not sufficient evidence.
+Temporary read-only CI diagnostics record R3F camera position before/after the
+walking actions and actual keyboard event codes. They do not change gameplay or
+fulfill any assertion; remove this scaffolding after identifying the route.
