@@ -137,6 +137,11 @@ export default function App() {
     const key = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
+
+        if (e.repeat) {
+          return;
+        }
+
         setMenu((m) => !m);
         release();
       }
