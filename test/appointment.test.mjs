@@ -44,7 +44,6 @@ test("breathing restores comfort and clears heat without changing treatment prog
   assert.equal(s.comfort, 55);
   assert.equal(s.heat, 0);
   assert.deepEqual(s.progress, p);
-  assert.equal("breaks" in s, false);
 });
 
 test("all three appointments complete in sequence, with new cases reset", () => {

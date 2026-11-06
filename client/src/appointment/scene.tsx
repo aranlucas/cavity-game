@@ -11,39 +11,24 @@ import {
   type MutableRefObject,
 } from "react";
 import * as THREE from "three";
-import { getPatient, steps, canTreat, treating, type Appointment, type Tool } from "./rules";
-import { ClinicCamera, ClinicRoom } from "./clinic";
+import {
+  getPatient,
+  patients,
+  steps,
+  canTreat,
+  treating,
+  type Appointment,
+  type Tool,
+} from "./rules";
+import { ClinicRoom } from "./clinic";
+import { ClinicCamera } from "./clinic-camera";
 import { STATION, type MovementPad, type ViewMode } from "./clinic-state";
 import { surfaceState } from "./surface";
+import { Model } from "./model";
 import { isMesh } from "./meshes";
 import { setControlsTarget } from "./camera-controls";
 
 const MOUTH_SCALE = 0.045;
-
-const locations: Coordinates[] = [
-  [-1.46, 0.59, -0.43],
-  [1.46, 0.59, -0.43],
-  [-1.46, 0.59, 0.43],
-  [1.46, 0.59, 0.43],
-];
-
-function Asset({ url }: AssetProps) {
-  const { scene } = useGLTF(url);
-
-  const copy = useMemo(() => {
-    const c = scene.clone(true);
-    c.traverse((o) => {
-      if (isMesh(o)) {
-        o.castShadow = true;
-        o.receiveShadow = true;
-      }
-    });
-
-    return c;
-  }, [scene]);
-
-  return <primitive object={copy} />;
-}
 
 function Mouth({ state, onLoaded }: MouthProps) {
   const { scene } = useGLTF("/models/treatment-mouth.glb");
@@ -139,7 +124,7 @@ function Instrument({ tool, position, working }: InstrumentProps) {
   return (
     <group ref={group} position={[3, 3, 1]} rotation={[0.3, 0, -0.65]}>
       <group position={[-0.18, 0.14, 0]}>
-        <Asset url={`/models/${tool}.glb`} />
+        <Model url={`/models/${tool}.glb`} />
       </group>
       {working && tool === "curing" && (
         <pointLight color="#328fff" intensity={0.025} distance={6} decay={2} />
@@ -238,46 +223,6 @@ export function TreatmentScene({
   onNear,
   onEnter,
 }: TreatmentSceneProps) {
-  const cursor = useRef(new THREE.Vector3(3, 3, 1));
-  const patient = getPatient(state.patient);
-  const session = mode === "treatment" && treating(state, paused);
-  const effective = canTreat(state, tool, working ? active : null, paused);
-
-  function aim(e: ThreeEvent<PointerEvent>) {
-    // A ray can cross enamel, cavity inserts and tongue. Only the nearest surface owns this gesture.
-    e.stopPropagation();
-    const local = e.point.clone().sub(STATION).divideScalar(MOUTH_SCALE);
-    cursor.current.copy(local).add(new THREE.Vector3(0, 0.06, 0));
-
-    if (!session) {
-      return;
-    }
-
-    let nearest: number | null = null;
-    let distance = 0.52;
-
-    for (const [i, spot] of patient.spots.entries()) {
-      const d = new THREE.Vector3(...locationAt(spot)).distanceTo(local);
-
-      if (d < distance && (state.progress[i] ?? 1) < 1) {
-        nearest = i;
-        distance = d;
-      }
-    }
-
-    onTarget(nearest);
-
-    if (nearest === null) {
-      onHold(false);
-    }
-  }
-
-  function aimSpot(index: number, spot: number) {
-    onTarget(index);
-    cursor.current.set(...locationAt(spot));
-    cursor.current.y += 0.05;
-  }
-
   return (
     <AssetBoundary>
       <Canvas
@@ -325,107 +270,19 @@ export function TreatmentScene({
           <ClinicRoom patient={state.patient} mode={mode} onEnter={onEnter} />
           {/* Original scanned teaching cast remains on the cabinet, apart from the patient's mouth. */}
           <group position={[-4.3, 1.13, -1.65]} scale={0.085}>
-            <Asset url="/models/dental-arch.glb" />
+            <Model url="/models/dental-arch.glb" />
           </group>
-          <group position={STATION} scale={MOUTH_SCALE}>
-            <group
-              onPointerMove={aim}
-              onPointerLeave={() => {
-                onHold(false);
-                onTarget(null);
-              }}
-              onPointerDown={(e) => {
-                e.stopPropagation();
-
-                if (session) {
-                  aim(e);
-                  onHold(true);
-                }
-              }}
-              onPointerUp={() => onHold(false)}
-            >
-              <Mouth state={state} onLoaded={onReady} />
-            </group>
-            {mode === "treatment" &&
-              state.step < steps.length &&
-              patient.spots.map((spot, i) => {
-                const p = state.progress[i] ?? 0;
-                const done = p >= 1;
-
-                const progressStyle: CSSProperties & ProgressStyleProperties = {
-                  "--progress": `${p * 100}%`,
-                };
-
-                return (
-                  <group key={spot} position={locations[spot]}>
-                    <mesh
-                      rotation={[-Math.PI / 2, 0, 0]}
-                      position={[0, 0.04, 0]}
-                      raycast={() => null}
-                    >
-                      <ringGeometry args={[0.29, 0.315, 40]} />
-                      <meshBasicMaterial
-                        color={done ? "#93ca96" : active === i ? "#fff2b1" : "#d4be7f"}
-                        transparent
-                        opacity={active === i ? 0.95 : 0.55}
-                        side={THREE.DoubleSide}
-                        depthWrite={false}
-                      />
-                    </mesh>
-                    <Html
-                      center
-                      position={[spot % 2 === 0 ? -0.67 : 0.67, 0.3, spot < 2 ? -0.14 : 0.14]}
-                      zIndexRange={[20, 10]}
-                    >
-                      <button
-                        type="button"
-                        aria-label={`Treat spot ${i + 1}`}
-                        className={`spot ${done ? "done" : ""} ${active === i ? "active" : ""}`}
-                        style={progressStyle}
-                        disabled={!session || done}
-                        onPointerDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          e.currentTarget.setPointerCapture(e.pointerId);
-                          aimSpot(i, spot);
-                          onHold(true);
-                        }}
-                        onPointerUp={() => onHold(false)}
-                        onPointerCancel={() => onHold(false)}
-                        onLostPointerCapture={() => onHold(false)}
-                        onPointerEnter={() => aimSpot(i, spot)}
-                        onPointerLeave={() => {
-                          onTarget(null);
-                          onHold(false);
-                        }}
-                        onKeyDown={(e) => {
-                          if ((e.key === " " || e.key === "Enter") && !e.repeat) {
-                            e.preventDefault();
-                            aimSpot(i, spot);
-                            onHold(true);
-                          }
-                        }}
-                        onKeyUp={() => onHold(false)}
-                        onBlur={() => {
-                          onHold(false);
-                          onTarget(null);
-                        }}
-                      >
-                        {done ? "✓" : i + 1}
-                      </button>
-                    </Html>
-                    {active === i && (
-                      <TreatmentParticles active={active} working={effective} tool={tool} />
-                    )}
-                  </group>
-                );
-              })}
-            {session && (
-              <Suspense fallback={null}>
-                <Instrument tool={tool} position={cursor} working={effective} />
-              </Suspense>
-            )}
-          </group>
+          <TreatmentMouth
+            state={state}
+            paused={paused}
+            tool={tool}
+            active={active}
+            working={working}
+            onTarget={onTarget}
+            onHold={onHold}
+            onReady={onReady}
+            mode={mode}
+          />
         </Suspense>
         <ClinicCamera
           mode={mode}
@@ -461,13 +318,196 @@ export function TreatmentScene({
   );
 }
 
+function TreatmentMouth({
+  state,
+  paused,
+  tool,
+  active,
+  working,
+  onTarget,
+  onHold,
+  onReady,
+  mode,
+}: Pick<
+  TreatmentSceneProps,
+  "state" | "paused" | "tool" | "active" | "working" | "onTarget" | "onHold" | "onReady" | "mode"
+>) {
+  const { scene } = useGLTF("/models/treatment-mouth.glb");
+
+  const locations = useMemo(() => {
+    scene.updateMatrixWorld(true);
+
+    return new Map(
+      patients
+        .flatMap((patient) => patient.spots)
+        .map((spot) => {
+          const node = scene.getObjectByName(`plaque_${spot}`);
+
+          if (!node) {
+            throw new Error(`Missing treatment target: plaque_${spot}`);
+          }
+
+          return [spot, scene.worldToLocal(node.getWorldPosition(new THREE.Vector3()))] as const;
+        }),
+    );
+  }, [scene]);
+
+  function locationAt(spot: number) {
+    const location = locations.get(spot);
+
+    if (!location) {
+      throw new RangeError(`Unknown treatment spot: ${spot}`);
+    }
+
+    return location;
+  }
+
+  const cursor = useRef(new THREE.Vector3(3, 3, 1));
+  const patient = getPatient(state.patient);
+  const session = mode === "treatment" && treating(state, paused);
+  const effective = canTreat(state, tool, working ? active : null, paused);
+
+  function aim(e: ThreeEvent<PointerEvent>) {
+    // A ray can cross enamel, cavity inserts and tongue. Only the nearest surface owns this gesture.
+    e.stopPropagation();
+    const local = e.point.clone().sub(STATION).divideScalar(MOUTH_SCALE);
+    cursor.current.copy(local).add(new THREE.Vector3(0, 0.06, 0));
+
+    if (!session) {
+      return;
+    }
+
+    let nearest: number | null = null;
+    let distance = 0.52;
+
+    for (const [i, spot] of patient.spots.entries()) {
+      const d = locationAt(spot).distanceTo(local);
+
+      if (d < distance && (state.progress[i] ?? 1) < 1) {
+        nearest = i;
+        distance = d;
+      }
+    }
+
+    onTarget(nearest);
+
+    if (nearest === null) {
+      onHold(false);
+    }
+  }
+
+  function aimSpot(index: number, spot: number) {
+    onTarget(index);
+    cursor.current.copy(locationAt(spot));
+    cursor.current.y += 0.05;
+  }
+
+  return (
+    <group position={STATION} scale={MOUTH_SCALE}>
+      <group
+        onPointerMove={aim}
+        onPointerLeave={() => {
+          onHold(false);
+          onTarget(null);
+        }}
+        onPointerDown={(e) => {
+          e.stopPropagation();
+
+          if (session) {
+            aim(e);
+            onHold(true);
+          }
+        }}
+        onPointerUp={() => onHold(false)}
+      >
+        <Mouth state={state} onLoaded={onReady} />
+      </group>
+      {mode === "treatment" &&
+        state.step < steps.length &&
+        patient.spots.map((spot, i) => {
+          const p = state.progress[i] ?? 0;
+          const done = p >= 1;
+
+          const progressStyle: CSSProperties & ProgressStyleProperties = {
+            "--progress": `${p * 100}%`,
+          };
+
+          return (
+            <group key={spot} position={locationAt(spot)}>
+              <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.04, 0]} raycast={() => null}>
+                <ringGeometry args={[0.29, 0.315, 40]} />
+                <meshBasicMaterial
+                  color={done ? "#93ca96" : active === i ? "#fff2b1" : "#d4be7f"}
+                  transparent
+                  opacity={active === i ? 0.95 : 0.55}
+                  side={THREE.DoubleSide}
+                  depthWrite={false}
+                />
+              </mesh>
+              <Html
+                center
+                position={[
+                  locationAt(spot).x < 0 ? -0.67 : 0.67,
+                  0.3,
+                  locationAt(spot).z < 0 ? -0.14 : 0.14,
+                ]}
+                zIndexRange={[20, 10]}
+              >
+                <button
+                  type="button"
+                  aria-label={`Treat spot ${i + 1}`}
+                  className={`spot ${done ? "done" : ""} ${active === i ? "active" : ""}`}
+                  style={progressStyle}
+                  disabled={!session || done}
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.currentTarget.setPointerCapture(e.pointerId);
+                    aimSpot(i, spot);
+                    onHold(true);
+                  }}
+                  onPointerUp={() => onHold(false)}
+                  onPointerCancel={() => onHold(false)}
+                  onLostPointerCapture={() => onHold(false)}
+                  onPointerEnter={() => aimSpot(i, spot)}
+                  onPointerLeave={() => {
+                    onTarget(null);
+                    onHold(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if ((e.key === " " || e.key === "Enter") && !e.repeat) {
+                      e.preventDefault();
+                      aimSpot(i, spot);
+                      onHold(true);
+                    }
+                  }}
+                  onKeyUp={() => onHold(false)}
+                  onBlur={() => {
+                    onHold(false);
+                    onTarget(null);
+                  }}
+                >
+                  {done ? "✓" : i + 1}
+                </button>
+              </Html>
+              {active === i && (
+                <TreatmentParticles active={active} working={effective} tool={tool} />
+              )}
+            </group>
+          );
+        })}
+      {session && (
+        <Suspense fallback={null}>
+          <Instrument tool={tool} position={cursor} working={effective} />
+        </Suspense>
+      )}
+    </group>
+  );
+}
+
 for (const name of ["chair", "equipment", "patient", "dental-arch", "treatment-mouth"]) {
   useGLTF.preload(`/models/${name}.glb`);
 }
-
-type Coordinates = [number, number, number];
-
-type AssetProps = { url: string };
 
 type MouthProps = { state: Appointment; onLoaded: () => void };
 
@@ -506,13 +546,3 @@ type TreatmentSceneProps = {
 };
 
 type ProgressStyleProperties = { "--progress": string };
-
-function locationAt(spot: number): Coordinates {
-  const location = locations[spot];
-
-  if (!location) {
-    throw new RangeError(`Unknown treatment spot: ${spot}`);
-  }
-
-  return location;
-}

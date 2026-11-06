@@ -1,145 +1,11 @@
-import { useEffect, useMemo, useRef, type MutableRefObject } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useEffect, useMemo } from "react";
 import { RoundedBox, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
-import { walk } from "./navigation";
 import { getPatient } from "./rules";
+import { Model } from "./model";
 import { isMesh } from "./meshes";
 
-import { STATION, idlePad, type MovementPad, type ViewMode } from "./clinic-state";
-
-export function ClinicCamera({ mode, paused, pad, resetKey, onNear, onEnter }: ClinicCameraProps) {
-  const { camera, gl } = useThree();
-  const keys = useRef(new Set<string>());
-  const look = useRef({ yaw: 0, pitch: -0.07, drag: false, x: 0, y: 0 });
-  const near = useRef(false);
-  useEffect(() => {
-    if (mode !== "room") {
-      return;
-    }
-
-    camera.position.set(2.7, 1.95, 3.8);
-    look.current.yaw = 0.44;
-    look.current.pitch = -0.16;
-    camera.rotation.set(look.current.pitch, look.current.yaw, 0, "YXZ");
-  }, [mode, resetKey, camera]);
-  useEffect(() => {
-    const clear = () => {
-      keys.current.clear();
-      look.current.drag = false;
-      Object.assign(pad.current, idlePad());
-    };
-
-    clear();
-
-    if (mode !== "room" || paused) {
-      return;
-    }
-
-    const down = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLElement && e.target.closest("dialog, input")) {
-        return;
-      }
-
-      if (
-        [
-          "KeyW",
-          "KeyA",
-          "KeyS",
-          "KeyD",
-          "ArrowUp",
-          "ArrowDown",
-          "ArrowLeft",
-          "ArrowRight",
-        ].includes(e.code)
-      ) {
-        e.preventDefault();
-        keys.current.add(e.code);
-      }
-
-      if (e.code === "KeyE" && near.current && !e.repeat) {
-        onEnter();
-      }
-    };
-
-    const up = (e: KeyboardEvent) => keys.current.delete(e.code);
-
-    const pointerDown = (e: PointerEvent) => {
-      if (e.button !== 0) {
-        return;
-      }
-
-      look.current.drag = true;
-      look.current.x = e.clientX;
-      look.current.y = e.clientY;
-    };
-
-    const pointerMove = (e: PointerEvent) => {
-      const l = look.current;
-
-      if (!l.drag) {
-        return;
-      }
-
-      l.yaw -= (e.clientX - l.x) * 0.003;
-      l.pitch = THREE.MathUtils.clamp(l.pitch - (e.clientY - l.y) * 0.003, -0.8, 0.65);
-      l.x = e.clientX;
-      l.y = e.clientY;
-    };
-
-    const release = () => {
-      look.current.drag = false;
-    };
-
-    window.addEventListener("keydown", down);
-    window.addEventListener("keyup", up);
-    window.addEventListener("blur", clear);
-    gl.domElement.addEventListener("pointerdown", pointerDown);
-    window.addEventListener("pointermove", pointerMove);
-    window.addEventListener("pointerup", release);
-    window.addEventListener("pointercancel", clear);
-
-    return () => {
-      clear();
-      window.removeEventListener("keydown", down);
-      window.removeEventListener("keyup", up);
-      window.removeEventListener("blur", clear);
-      gl.domElement.removeEventListener("pointerdown", pointerDown);
-      window.removeEventListener("pointermove", pointerMove);
-      window.removeEventListener("pointerup", release);
-      window.removeEventListener("pointercancel", clear);
-    };
-  }, [mode, paused, pad, camera, gl, onEnter]);
-  useFrame((_, dt) => {
-    if (mode !== "room" || paused) {
-      return;
-    }
-
-    const k = keys.current;
-    const l = look.current;
-    const p = pad.current;
-
-    const f =
-      Number(k.has("KeyW") || k.has("ArrowUp") || p.forward) -
-      Number(k.has("KeyS") || k.has("ArrowDown") || p.back);
-
-    const r =
-      Number(k.has("KeyD") || k.has("ArrowRight") || p.right) -
-      Number(k.has("KeyA") || k.has("ArrowLeft") || p.left);
-
-    const next = walk(camera.position.x, camera.position.z, l.yaw, f, r, dt);
-    camera.position.set(next.x, camera.position.y, next.z);
-    camera.rotation.set(l.pitch, l.yaw, 0);
-    const close = Math.hypot(camera.position.x - STATION.x, camera.position.z - STATION.z) < 2.4;
-
-    if (close !== near.current) {
-      near.current = close;
-      onNear(close);
-    }
-  });
-
-  return null;
-}
+import { STATION, type ViewMode } from "./clinic-state";
 
 function Box({ position, size, color, radius = 0.06, metal = 0 }: BoxProps) {
   return (
@@ -256,24 +122,12 @@ function Patient({ patient }: PatientProps) {
 }
 
 export function ClinicRoom({ patient, mode, onEnter }: ClinicRoomProps) {
-  const chair = useGLTF("/models/chair.glb");
-  const equipment = useGLTF("/models/equipment.glb");
-
   const lampTarget = useMemo(() => {
     const target = new THREE.Object3D();
     target.position.copy(STATION);
 
     return target;
   }, []);
-
-  useEffect(() => {
-    equipment.scene.traverse((object) => {
-      if (object instanceof THREE.Mesh) {
-        object.castShadow = true;
-        object.receiveShadow = true;
-      }
-    });
-  }, [equipment.scene]);
 
   return (
     <group>
@@ -294,7 +148,6 @@ export function ClinicRoom({ patient, mode, onEnter }: ClinicRoomProps) {
       <Box position={[-4.87, 0.65, 0]} size={[0.08, 1.3, 8]} color="#819886" radius={0.02} />
       <Box position={[4.87, 0.65, 0]} size={[0.08, 1.3, 8]} color="#819886" radius={0.02} />
       <Box position={[0, 1.32, -3.82]} size={[10, 0.055, 0.12]} color="#eee4cd" radius={0.01} />
-      {/* Sunlit window with deep frames and a distant garden. */}
       <Box position={[2.7, 2.55, -3.84]} size={[3, 1.8, 0.15]} color="#eae9d7" />
       <mesh position={[2.7, 2.55, -3.73]}>
         <planeGeometry args={[2.8, 1.6]} />
@@ -303,7 +156,6 @@ export function ClinicRoom({ patient, mode, onEnter }: ClinicRoomProps) {
       <Box position={[2.7, 2.55, -3.65]} size={[0.065, 1.65, 0.08]} color="#f2e7d0" radius={0.01} />
       <Box position={[2.7, 2.55, -3.65]} size={[2.85, 0.06, 0.08]} color="#f2e7d0" radius={0.01} />
       <Box position={[2.7, 1.68, -3.6]} size={[3.2, 0.12, 0.4]} color="#f2e7d0" />
-      {/* Cabinet wall */}
       {[-2.8, -1.65, -0.5].map((z) => (
         <group key={z}>
           <Box position={[-4.35, 0.51, z]} size={[1, 1, 1.1]} color="#c8cabb" />
@@ -342,12 +194,11 @@ export function ClinicRoom({ patient, mode, onEnter }: ClinicRoomProps) {
         rotation={[0, Math.PI, 0]}
         onClick={mode === "room" ? onEnter : undefined}
       >
-        <primitive object={chair.scene} />
+        <Model url="/models/chair.glb" />
       </group>
       <Patient patient={patient} />
-      {/* Blender-authored cart, handpieces, hoses, articulated lamp, and stool. */}
       <group onClick={mode === "room" ? onEnter : undefined}>
-        <primitive object={equipment.scene} />
+        <Model url="/models/equipment.glb" />
       </group>
       <primitive object={lampTarget} />
       <spotLight
@@ -358,7 +209,6 @@ export function ClinicRoom({ patient, mode, onEnter }: ClinicRoomProps) {
         penumbra={0.8}
         color="#fff0d7"
       />
-      {/* Framed abstract tooth / clinic artwork, built from geometry. */}
       <Box position={[-1.8, 2.5, -3.77]} size={[1.3, 1.45, 0.08]} color="#a88c63" />
       <Box position={[-1.8, 2.5, -3.7]} size={[1.17, 1.32, 0.035]} color="#f2e7cf" radius={0.01} />
       <mesh position={[-1.8, 2.55, -3.66]} scale={[0.36, 0.43, 0.04]}>
@@ -376,15 +226,6 @@ export function ClinicRoom({ patient, mode, onEnter }: ClinicRoomProps) {
 }
 
 type Coordinates = [number, number, number];
-
-type ClinicCameraProps = {
-  mode: ViewMode;
-  paused: boolean;
-  pad: MutableRefObject<MovementPad>;
-  resetKey: number;
-  onNear: (v: boolean) => void;
-  onEnter: () => void;
-};
 
 type BoxProps = {
   position: Coordinates;

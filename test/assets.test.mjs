@@ -2,9 +2,15 @@ import { test } from "vitest";
 import { z } from "zod";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { patients } from "@/appointment/rules.ts";
 
 const assetDocument = z.object({
-  nodes: z.array(z.object({ name: z.string().optional() })),
+  nodes: z.array(
+    z.object({
+      name: z.string().optional(),
+      translation: z.tuple([z.number(), z.number(), z.number()]).optional(),
+    }),
+  ),
   buffers: z.array(z.object({ uri: z.string().optional() })).optional(),
   images: z.array(z.object({ bufferView: z.number().optional() })).optional(),
   materials: z.array(z.object({ name: z.string() })).default([]),
@@ -73,4 +79,24 @@ test("patient retains materials for three patient appearance variants", () => {
       `missing ${name}`,
     );
   }
+});
+
+// Targets must remain separately positioned inserts: exporting baked geometry at a shared
+// origin would leave the visible teeth intact but collapse all runtime hit targets.
+test("every patient target has a distinct authored plaque center", () => {
+  const mouth = model("treatment-mouth");
+  const centers = new Set();
+  const spots = new Set(patients.flatMap((patient) => patient.spots));
+
+  for (const spot of spots) {
+    const matches = mouth.nodes.filter((node) => node.name === `plaque_${spot}`);
+    assert.equal(matches.length, 1, `target ${spot} must resolve unambiguously`);
+    const center = matches[0]?.translation;
+    assert.ok(center, `target ${spot} must have an authored center`);
+    assert.ok(center.every(Number.isFinite));
+    assert.ok(center[1] > 0, "targets must sit above the mouth origin");
+    centers.add(JSON.stringify(center));
+  }
+
+  assert.equal(centers.size, spots.size, "treatment targets must not overlap");
 });

@@ -100,7 +100,9 @@ export function ClinicHud({
         <div className="hud-heading">
           <span className="clinic-mark">✳</span>
           <div>
-            <span className="eyebrow">LITTLE SMILES · VISIT {state.patient + 1}/3</span>
+            <span className="eyebrow">
+              LITTLE SMILES · VISIT {state.patient + 1}/{patients.length}
+            </span>
             <h1>
               {patient.name}
               <small>{patient.age} years old</small>
@@ -243,7 +245,7 @@ export function ClinicHud({
           >
             ↺
           </button>
-          {state.step === 2 && (
+          {step.tool === "excavator" && (
             <div className={`heat-hud ${state.heat > 75 ? "hot" : ""}`}>
               <span>{state.cooldown ? "Cooling down…" : "Instrument heat"}</span>
               <div className="meter">

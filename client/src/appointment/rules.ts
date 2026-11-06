@@ -1,7 +1,3 @@
-export const tools = ["mirror", "polisher", "excavator", "composite", "curing"] as const;
-
-export type Tool = (typeof tools)[number];
-
 export const steps = [
   {
     title: "Look closely",
@@ -39,6 +35,10 @@ export const steps = [
     duration: 1.8,
   },
 ] as const;
+
+export type Tool = (typeof steps)[number]["tool"];
+
+export const tools = steps.map((step) => step.tool);
 
 export const patients = [
   {
@@ -96,12 +96,10 @@ export type Action =
   | { type: "start" | "pause" | "breathe" | "next" | "restart" | "newDay" }
   | { type: "tick"; dt: number; target: number | null; tool: Tool };
 
-/** Live treatment step: started, not complete, and not paused. */
 export function treating(state: Appointment, paused = state.paused) {
   return state.started && !paused && state.step < steps.length;
 }
 
-/** The held tool can apply work to this tooth right now. */
 export function canTreat(
   state: Appointment,
   tool: Tool,

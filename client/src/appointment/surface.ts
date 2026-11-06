@@ -1,4 +1,5 @@
-/** Mesh visibility is derived from treatment state, never persisted separately. */
+import { steps, type Tool } from "./rules";
+
 export function surfaceState(step: number, progress: number, affected: boolean) {
   if (!affected) {
     return { plaque: 0, decay: 0, filling: 1, cured: true };
@@ -6,10 +7,16 @@ export function surfaceState(step: number, progress: number, affected: boolean) 
 
   const p = Math.max(0, Math.min(1, progress));
 
+  const remaining = (tool: Tool) => {
+    const stage = steps.findIndex((s) => s.tool === tool);
+
+    return step < stage ? 1 : step === stage ? 1 - p : 0;
+  };
+
   return {
-    plaque: step < 1 ? 1 : step === 1 ? 1 - p : 0,
-    decay: step < 2 ? 1 : step === 2 ? 1 - p : 0,
-    filling: step < 3 ? 0 : step === 3 ? p : 1,
-    cured: step >= 5 || (step === 4 && p >= 1),
+    plaque: remaining("polisher"),
+    decay: remaining("excavator"),
+    filling: 1 - remaining("composite"),
+    cured: remaining("curing") === 0,
   };
 }
