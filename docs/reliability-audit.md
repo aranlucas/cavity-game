@@ -94,3 +94,12 @@ real walking controls a longer bounded wait. The camera already clears held
 movement when proximity changes its entry callback, so it stops at the chair.
 The quota fixture now ignores the opaque initial blank page before seeding the
 app's own origin. Treatment, reward and persistence assertions remain intact.
+
+Run [42301056825](https://github.com/aranlucas/cavity-game/actions/runs/42301056825)
+showed that the longer walking wait did not fix the entry assertion. Inspection
+of the published runner's locator implementation established the actual selector
+error: exact name matching is the default. The entry button contains `E`, patient
+headings contain the age, and the next-patient button contains an arrow. Updated
+these selectors to regex names, with level 1 still distinguishing the patient
+heading. GPU warnings were observed but were insufficient to establish the
+earlier walking-timeout diagnosis. The pause regression still passed this run.
