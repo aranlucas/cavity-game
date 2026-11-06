@@ -41,3 +41,54 @@ jobs:
 
           - name: Build
             run: pnpm run build
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: pnpm/setup@fa36a5ef7dcdefc3a7cb25655c122e00cf6e636e
+        with:
+          node-version-file: .node-version
+          cache: true
+          require-lockfile: true
+      - run: pnpm exec e2e-web install chromium --with-deps
+      - name: Prove pause regression fails before the fix
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          cp client/src/app.tsx /tmp/fixed-app.tsx
+          trap 'cp /tmp/fixed-app.tsx client/src/app.tsx' EXIT
+          git show "$BASE_SHA:client/src/app.tsx" > client/src/app.tsx
+          set +e
+          pnpm exec e2e run tests/pause.e2e.ts
+          result=$?
+          set -e
+          test "$result" -eq 1
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import assert from 'node:assert/strict';
+          const report = JSON.parse(fs.readFileSync('.e2e/report.json', 'utf8'));
+          const results = report.run.results.filter(r => r.selected);
+          assert.equal(results.length, 1);
+          const attempt = results[0].attempts.at(-1);
+          assert.equal(attempt.error.code, 'ASSERTION_FAILED');
+          assert.equal(attempt.error.source.line, 12, 'failure must be the dialog assertion after repeat');
+          JS
+          cp -r .e2e /tmp/pause-before-fix
+      - name: Run deterministic clinic journeys
+        run: pnpm run test:e2e
+      - name: Upload browser evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: clinic-e2e
+          include-hidden-files: true
+          path: |
+            .e2e/
+            /tmp/pause-before-fix/
+          retention-days: 7
