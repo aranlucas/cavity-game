@@ -139,3 +139,14 @@ default 30-second action timeout after a 10-second long-press input dispatched,
 before later camera observations ran. Raised actionTimeout to 120 seconds and
 record camera position in finally after each forward gesture. The movement
 assertion and remaining full-journey gates are unchanged and still unfinished.
+
+Run [42312670026](https://github.com/aranlucas/cavity-game/actions/runs/42312670026)
+provided decisive camera evidence: two ten-second forward gestures moved from
+`(2.7, 3.8)` to `(1.98, 2.28)` then `(1.27, 0.76)`. The test strafed too early
+and ended at `(4.31, -3.49)`, never approaching the chair. Frame-clamped walking
+under software rendering cannot use timing estimated for interactive GPU rates.
+The CI browser fixture now uses the renderer's native shadowMap and pixel-ratio
+settings to disable shadows and render at half resolution. It retains real
+assets, geometry, collision, camera, input, treatment, scoring and storage; it
+does not establish visual fidelity. Production code/config is unchanged. Camera
+diagnostics remain temporary until the real full journey passes.

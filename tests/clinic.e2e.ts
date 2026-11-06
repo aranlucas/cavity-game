@@ -18,6 +18,14 @@ test("treat a visit, bank a sticker, meet Leo and restore the saved visit", asyn
     const camera = root.store.getState().camera;
     return { position: camera.position.toArray(), rotation: camera.rotation.toArray() };
   }`);
+  // Software CI validates gameplay, not shadow quality. Keep the real scene and
+  // camera, but reduce raster work so frame-clamped walking can make progress.
+  await browser.evaluate(`async () => {
+    const { _roots } = await import('/node_modules/.vite/deps/@react-three_fiber.js');
+    const { gl } = _roots.get(document.querySelector('canvas')).store.getState();
+    gl.shadowMap.enabled = false;
+    gl.setPixelRatio(0.5);
+  }`);
   console.log("navigation before walking", await navigationEvidence());
   await browser.evaluate(() => {
     window.addEventListener("keydown", (event) =>
