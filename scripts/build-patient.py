@@ -20,7 +20,6 @@ args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv
 MODEL_DIR = args.output_dir
 MODEL_DIR.mkdir(parents=True, exist_ok=True)
 MOUTH_ANCHOR = (0, 1.792, -1.155)
-TARGETS = [(-1.46, .59, -.43), (1.46, .59, -.43), (-1.46, .59, .43), (1.46, .59, .43)]
 bpy.ops.wm.read_factory_settings(use_empty=True)
 
 def pos(p): return Vector((p[0], -p[2], p[1]))
@@ -425,5 +424,4 @@ if not args.skip_preview:bpy.ops.render.render(write_still=True)
 bpy.context.window.scene=preview
 bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/'assets/patient-studio.blend'))
 print('MOUTH_ANCHOR',MOUTH_ANCHOR)
-print('TREATMENT_TARGETS',TARGETS)
 for p in [MODEL_DIR/'patient.glb',MODEL_DIR/'treatment-mouth.glb']:print(p.name,p.stat().st_size,'bytes')
