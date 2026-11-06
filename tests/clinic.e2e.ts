@@ -10,7 +10,7 @@ test("treat a visit, bank a sticker, meet Leo and restore the saved visit", asyn
   await expect(screen.getByRole("button", "Approach the patient chair")).toBeVisible();
   // Follow the chair's collision boundary using the documented walking controls.
   await browser.keyboard.down("w");
-  await expect(screen.getByRole("button", "Begin treatment")).toBeEnabled();
+  await expect(screen.getByRole("button", "Begin treatment")).toBeEnabled({ timeout: 180_000 });
   await browser.keyboard.up("w");
   await screen.getByRole("button", "Begin treatment").tap();
   const stages = [
@@ -36,7 +36,7 @@ test("treat a visit, bank a sticker, meet Leo and restore the saved visit", asyn
   }
   await expect(screen.getByText("Mia earned the Cosmic explorer sticker.")).toBeVisible();
   await screen.getByRole("button", "Meet your next patient").tap();
-  await expect(screen.getByRole("heading", "Leo", { exact: false })).toBeVisible();
+  await expect(screen.getByRole("heading", "Leo", { level: 1 })).toBeVisible();
   await screen.getByRole("button", "Pause and controls").tap();
   await screen.getByRole("button", "Sound on").tap();
   await expect
@@ -54,12 +54,12 @@ test("treat a visit, bank a sticker, meet Leo and restore the saved visit", asyn
     )
     .toEqual({ patient: 1, stickers: [0], sound: false });
   await browser.reload();
-  await expect(screen.getByRole("heading", "Leo", { exact: false })).toBeVisible();
+  await expect(screen.getByRole("heading", "Leo", { level: 1 })).toBeVisible();
   await screen.getByRole("button", "Pause and controls").tap();
   await expect(screen.getByRole("button", "Sound off")).toBeVisible();
   await screen.getByText("Clinic day & sticker collection", { exact: true }).tap();
   await screen.getByRole("button", "Start new day", { exact: true }).tap();
-  await expect(screen.getByRole("heading", "Mia", { exact: false })).toBeVisible();
+  await expect(screen.getByRole("heading", "Mia", { level: 1 })).toBeVisible();
   await expect(screen.getByText("Day 2", { exact: true })).toBeVisible();
 });
 
@@ -69,13 +69,14 @@ test("corrupt saves and denied writes leave the menu usable and report unsaved p
   screen,
 }) => {
   await browser.addInitScript(() => {
+    if (location.origin !== "http://127.0.0.1:5173") return;
     localStorage.setItem("little-smiles:clinic:v1", "{broken");
     Storage.prototype.setItem = () => {
       throw new DOMException("Test quota", "QuotaExceededError");
     };
   });
   await app.open("/");
-  await expect(screen.getByRole("heading", "Mia", { exact: false })).toBeVisible();
+  await expect(screen.getByRole("heading", "Mia", { level: 1 })).toBeVisible();
   await screen.getByRole("button", "Pause and controls").tap();
   await expect(
     screen.getByText("Saving is unavailable in this browser", { exact: false }),

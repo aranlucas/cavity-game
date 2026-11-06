@@ -84,3 +84,13 @@ Cloudflare dry-run build. The baseline browser reproduction passed its proof
 gate: the original app failed the dialog-visible assertion after repeated Escape.
 The CI job failed lint on a missing blank line after the new repeat guard; fixed
 without changing behavior. The complete browser journey remains pending.
+
+Run [42300151254](https://github.com/aranlucas/cavity-game/actions/runs/42300151254)
+passed the fixed pause test and baseline proof, but exposed ambiguous patient
+heading selectors and a walking timeout under software WebGL (only three
+assertion reads in 21.7 seconds, with GPU readback stall warnings). Narrowed
+patient selectors to heading level 1, reduced the browser viewport and gave the
+real walking controls a longer bounded wait. The camera already clears held
+movement when proximity changes its entry callback, so it stops at the chair.
+The quota fixture now ignores the opaque initial blank page before seeding the
+app's own origin. Treatment, reward and persistence assertions remain intact.

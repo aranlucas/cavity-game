@@ -6,7 +6,7 @@ export default {
   targets: [
     {
       name: "chromium",
-      engine: web({ viewport: { width: 1440, height: 1000 } }),
+      engine: web({ viewport: { width: 960, height: 720 } }),
       app: {
         url: "http://127.0.0.1:5173",
         command: {
@@ -27,7 +27,7 @@ export default {
   ],
   workers: 1,
   retries: 0,
-  timeout: 180_000,
+  timeout: 600_000,
   assertionTimeout: 20_000,
   trace: "retain-on-failure",
   reporters: ["list", "junit"],
