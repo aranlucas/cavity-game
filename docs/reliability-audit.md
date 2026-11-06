@@ -75,3 +75,12 @@ this PR (otherwise future fixed baselines would incorrectly fail CI), and checke
 the exact repeated-dialog assertion location. Both were corrected. Review found
 no further concrete implementation objection; browser/runtime evidence remains
 pending CI.
+
+## CI evidence
+
+Run [42299763207](https://github.com/aranlucas/cavity-game/actions/runs/42299763207)
+on `cb1aa88` passed all 28 existing Vitest tests, the tooling typecheck and
+Cloudflare dry-run build. The baseline browser reproduction passed its proof
+gate: the original app failed the dialog-visible assertion after repeated Escape.
+The CI job failed lint on a missing blank line after the new repeat guard; fixed
+without changing behavior. The complete browser journey remains pending.

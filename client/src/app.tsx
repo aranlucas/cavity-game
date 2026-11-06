@@ -141,6 +141,7 @@ export default function App() {
         if (e.repeat) {
           return;
         }
+
         setMenu((m) => !m);
         release();
       }
