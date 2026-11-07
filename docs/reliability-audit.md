@@ -158,3 +158,14 @@ mirror target to finish. Reapply the CI renderer budget after viewport resize
 capture saved progress plus unnormalized key data if a target hold fails. This
 separates progress starvation from a real keyboard-input defect without replacing
 the action or weakening the completion assertion. Full journey remains pending.
+
+Run [42314187296](https://github.com/aranlucas/cavity-game/actions/runs/42314187296)
+passed the existing CI job. The browser job hit its 15-minute limit after browser
+installation took almost nine minutes. Before cancellation, real inspection and
+cleaning completed; repair reached 90.9% on the first tooth before its 60-second
+assertion expired. Saved progress confirmed held input works, so removed all
+temporary camera/key/progress diagnostics. Only the renderer budget fixture
+remains. Treatment completion waits now allow 120 seconds per tooth/stage, the
+full journey 20 minutes, and the CI job 35 minutes including setup. All completion,
+reward and save assertions are retained; keys release in finally on failure.
+The complete journey remains unverified until a successful CI run.

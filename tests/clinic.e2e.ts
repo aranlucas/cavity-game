@@ -10,14 +10,6 @@ test("treat a visit, bank a sticker, meet Leo and restore the saved visit", asyn
   await browser.setViewport({ width: 550, height: 900 });
   await app.open("/");
   await expect(screen.getByRole("button", "Approach the patient chair")).toBeVisible();
-  // Temporary CI diagnostics: remove after establishing the actual walking path.
-  const navigationEvidence = () =>
-    browser.evaluate(`async () => {
-    const { _roots } = await import('/node_modules/.vite/deps/@react-three_fiber.js');
-    const root = _roots.get(document.querySelector('canvas'));
-    const camera = root.store.getState().camera;
-    return { position: camera.position.toArray(), rotation: camera.rotation.toArray() };
-  }`);
   // Software CI validates gameplay, not shadow quality. Keep the real scene and
   // camera, but reduce raster work so frame-clamped walking can make progress.
   const reduceRasterWork = () =>
@@ -28,31 +20,15 @@ test("treat a visit, bank a sticker, meet Leo and restore the saved visit", asyn
     gl.setPixelRatio(0.5);
   }`);
   await reduceRasterWork();
-  console.log("navigation before walking", await navigationEvidence());
-  await browser.evaluate(() => {
-    window.addEventListener("keydown", (event) =>
-      console.info(
-        "navigation key",
-        JSON.stringify({ key: event.key, code: event.code, repeat: event.repeat }),
-      ),
-    );
-  });
   // Walk around the chair's left edge, then strafe back toward it. Continuing
   // forward alone walks away from the station after sliding past the chair.
   const forward = screen.getByRole("button", "Move forward");
-  for (const pass of [1, 2]) {
-    try {
-      await forward.longPress({ duration: 10_000 });
-    } finally {
-      console.log("navigation after forward hold", pass, await navigationEvidence());
-    }
-  }
-  console.log("navigation after forward holds", await navigationEvidence());
+  await forward.longPress({ duration: 10_000 });
+  await forward.longPress({ duration: 10_000 });
   await browser.keyboard.down("d");
   try {
     await expect(screen.getByRole("button", /Begin treatment/)).toBeEnabled({ timeout: 180_000 });
   } finally {
-    console.log("navigation after strafe", await navigationEvidence());
     await browser.keyboard.up("d");
   }
   await screen.getByRole("button", /Begin treatment/).tap();
@@ -72,23 +48,18 @@ test("treat a visit, bank a sticker, meet Leo and restore the saved visit", asyn
     await first.focus();
     await browser.keyboard.down("Space");
     try {
-      await expect(first).toBeDisabled();
+      await expect(first).toBeDisabled({ timeout: 120_000 });
     } finally {
-      console.log(
-        "treatment hold evidence",
-        current,
-        await browser.evaluate(() => ({
-          save: localStorage.getItem("little-smiles:clinic:v1"),
-          focused: document.activeElement?.outerHTML ?? null,
-        })),
-      );
+      await browser.keyboard.up("Space");
     }
-    await browser.keyboard.up("Space");
     const second = screen.getByRole("button", "Treat spot 2");
     await second.focus();
     await browser.keyboard.down("Space");
-    await expect(screen.getByRole("heading", next)).toBeVisible();
-    await browser.keyboard.up("Space");
+    try {
+      await expect(screen.getByRole("heading", next)).toBeVisible({ timeout: 120_000 });
+    } finally {
+      await browser.keyboard.up("Space");
+    }
   }
   await expect(screen.getByText("Mia earned the Cosmic explorer sticker.")).toBeVisible();
   await screen.getByRole("button", /Meet your next patient/).tap();
