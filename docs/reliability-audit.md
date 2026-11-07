@@ -103,3 +103,69 @@ headings contain the age, and the next-patient button contains an arrow. Updated
 these selectors to regex names, with level 1 still distinguishing the patient
 heading. GPU warnings were observed but were insufficient to establish the
 earlier walking-timeout diagnosis. The pause regression still passed this run.
+
+## Merge reconciliation and remaining validation
+
+PR #60 merged on 2026-11-06 at 22:22:22 UTC as `86705c0`, with head
+`8bab2cb`. This does **not** complete the audit: the PR browser run was
+cancelled, and post-merge run
+[42304207118](https://github.com/aranlucas/cavity-game/actions/runs/42304207118)
+passed pause and corrupt-save/quota journeys but failed treatment entry. The
+existing unit/typecheck/lint/build job passed. No completed treatment/reward
+journey has yet passed CI. Existing portfolio handoff is preserved.
+
+Static tracing of the test's single forward hold against the collision bounds
+shows it slides past the chair to the left and then away from the entry radius.
+A longer wait cannot correct a walking direction. Remediation will use the
+existing movement controls to walk forward then strafe toward the chair, retaining
+the full treatment, reward and save assertions. No gameplay change is proposed.
+
+Independent remediation review caught that the movement pad is intentionally
+hidden for desktop fine pointers. The journey now opens at its supported
+550px breakpoint for movement, then resizes to desktop for the treatment checks.
+Both are existing product layouts; no styles or input internals are overridden.
+
+Run [42310639477](https://github.com/aranlucas/cavity-game/actions/runs/42310639477)
+confirmed both supported movement-pad holds executed, but treatment entry still
+failed. Pause and quota/corrupt-save checks passed. The failure image shows a
+wall-facing camera, so the static route estimate is not sufficient evidence.
+Temporary read-only CI diagnostics record R3F camera position before/after the
+walking actions and actual keyboard event codes. They do not change gameplay or
+fulfill any assertion; remove this scaffolding after identifying the route.
+
+Run [42311767850](https://github.com/aranlucas/cavity-game/actions/runs/42311767850)
+recorded the expected initial camera at `(2.7, 1.95, 3.8)`, then hit the runner's
+default 30-second action timeout after a 10-second long-press input dispatched,
+before later camera observations ran. Raised actionTimeout to 120 seconds and
+record camera position in finally after each forward gesture. The movement
+assertion and remaining full-journey gates are unchanged and still unfinished.
+
+Run [42312670026](https://github.com/aranlucas/cavity-game/actions/runs/42312670026)
+provided decisive camera evidence: two ten-second forward gestures moved from
+`(2.7, 3.8)` to `(1.98, 2.28)` then `(1.27, 0.76)`. The test strafed too early
+and ended at `(4.31, -3.49)`, never approaching the chair. Frame-clamped walking
+under software rendering cannot use timing estimated for interactive GPU rates.
+The CI browser fixture now uses the renderer's native shadowMap and pixel-ratio
+settings to disable shadows and render at half resolution. It retains real
+assets, geometry, collision, camera, input, treatment, scoring and storage; it
+does not establish visual fidelity. Production code/config is unchanged. Camera
+diagnostics remain temporary until the real full journey passes.
+
+Run [42313568142](https://github.com/aranlucas/cavity-game/actions/runs/42313568142)
+reached the chair and entered real treatment. It failed waiting for the first
+mirror target to finish. Reapply the CI renderer budget after viewport resize
+(R3F resets DPR), allow bounded 60-second assertions for software rendering, and
+capture saved progress plus unnormalized key data if a target hold fails. This
+separates progress starvation from a real keyboard-input defect without replacing
+the action or weakening the completion assertion. Full journey remains pending.
+
+Run [42314187296](https://github.com/aranlucas/cavity-game/actions/runs/42314187296)
+passed the existing CI job. The browser job hit its 15-minute limit after browser
+installation took almost nine minutes. Before cancellation, real inspection and
+cleaning completed; repair reached 90.9% on the first tooth before its 60-second
+assertion expired. Saved progress confirmed held input works, so removed all
+temporary camera/key/progress diagnostics. Only the renderer budget fixture
+remains. Treatment completion waits now allow 120 seconds per tooth/stage, the
+full journey 20 minutes, and the CI job 35 minutes including setup. All completion,
+reward and save assertions are retained; keys release in finally on failure.
+The complete journey remains unverified until a successful CI run.

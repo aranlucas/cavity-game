@@ -6,13 +6,34 @@ test("treat a visit, bank a sticker, meet Leo and restore the saved visit", asyn
   browser,
   screen,
 }) => {
+  // The movement pad is visible at the supported narrow-screen breakpoint.
+  await browser.setViewport({ width: 550, height: 900 });
   await app.open("/");
   await expect(screen.getByRole("button", "Approach the patient chair")).toBeVisible();
-  // Follow the chair's collision boundary using the documented walking controls.
-  await browser.keyboard.down("w");
-  await expect(screen.getByRole("button", /Begin treatment/)).toBeEnabled({ timeout: 180_000 });
-  await browser.keyboard.up("w");
+  // Software CI validates gameplay, not shadow quality. Keep the real scene and
+  // camera, but reduce raster work so frame-clamped walking can make progress.
+  const reduceRasterWork = () =>
+    browser.evaluate(`async () => {
+    const { _roots } = await import('/node_modules/.vite/deps/@react-three_fiber.js');
+    const { gl } = _roots.get(document.querySelector('canvas')).store.getState();
+    gl.shadowMap.enabled = false;
+    gl.setPixelRatio(0.5);
+  }`);
+  await reduceRasterWork();
+  // Walk around the chair's left edge, then strafe back toward it. Continuing
+  // forward alone walks away from the station after sliding past the chair.
+  const forward = screen.getByRole("button", "Move forward");
+  await forward.longPress({ duration: 10_000 });
+  await forward.longPress({ duration: 10_000 });
+  await browser.keyboard.down("d");
+  try {
+    await expect(screen.getByRole("button", /Begin treatment/)).toBeEnabled({ timeout: 180_000 });
+  } finally {
+    await browser.keyboard.up("d");
+  }
   await screen.getByRole("button", /Begin treatment/).tap();
+  await browser.setViewport({ width: 960, height: 720 });
+  await reduceRasterWork();
   const stages = [
     ["Dental mirror", "Look closely", "A fresh start"],
     ["Polisher", "A fresh start", "Gentle little passes"],
@@ -26,13 +47,19 @@ test("treat a visit, bank a sticker, meet Leo and restore the saved visit", asyn
     const first = screen.getByRole("button", "Treat spot 1");
     await first.focus();
     await browser.keyboard.down("Space");
-    await expect(first).toBeDisabled();
-    await browser.keyboard.up("Space");
+    try {
+      await expect(first).toBeDisabled({ timeout: 120_000 });
+    } finally {
+      await browser.keyboard.up("Space");
+    }
     const second = screen.getByRole("button", "Treat spot 2");
     await second.focus();
     await browser.keyboard.down("Space");
-    await expect(screen.getByRole("heading", next)).toBeVisible();
-    await browser.keyboard.up("Space");
+    try {
+      await expect(screen.getByRole("heading", next)).toBeVisible({ timeout: 120_000 });
+    } finally {
+      await browser.keyboard.up("Space");
+    }
   }
   await expect(screen.getByText("Mia earned the Cosmic explorer sticker.")).toBeVisible();
   await screen.getByRole("button", /Meet your next patient/).tap();
